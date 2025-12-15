@@ -1,6 +1,6 @@
 // Shutter.exe
 // Schedule shutdown or restart using a calendar + time picker.
-// Mad by WAM-Sofware (c) since 1997.
+// Made by WAM-Sofware (c) since 1997.
 
 using System;
 using System.Diagnostics;
@@ -14,9 +14,9 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("Shutter")]
 [assembly: AssemblyProduct("Shutter")]
 [assembly: AssemblyCompany("WAM-Software")]
-[assembly: AssemblyCopyright("Mad by WAM-Sofware (c) since 1997.")]
-[assembly: AssemblyVersion("1.0.3.0")]
-[assembly: AssemblyFileVersion("1.0.3.0")]
+[assembly: AssemblyCopyright("Made by WAM-Sofware (c) since 1997.")]
+[assembly: AssemblyVersion("1.0.4.0")]
+[assembly: AssemblyFileVersion("1.0.4.0")]
 
 namespace Shutter
 {
@@ -34,7 +34,7 @@ namespace Shutter
     internal sealed class MainForm : Form
     {
         private const string AppTitle = "Shutter";
-        private const string VersionLabel = "v1.0.3";
+        private const string VersionLabel = "v1.0.4";
         private const int MaxShutdownSeconds = 315360000; // shutdown.exe /t max
 
         private readonly MonthCalendar _calendar;
@@ -194,7 +194,7 @@ namespace Shutter
 
             var footer = new Label
             {
-                Text = "Mad by WAM-Sofware (c) since 1997.",
+                Text = "Made by WAM-Sofware (c) since 1997.",
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft
             };
@@ -774,7 +774,7 @@ namespace Shutter
             };
             var subtitle = new Label
             {
-                Text = "Mad by WAM-Sofware (c) since 1997.",
+                Text = "Made by WAM-Sofware (c) since 1997.",
                 ForeColor = Color.FromArgb(220, 255, 255, 255),
                 Font = new Font("Segoe UI", 10.5f, FontStyle.Regular),
                 AutoSize = true,
@@ -1064,7 +1064,7 @@ namespace Shutter
 
             sb.AppendLine("GitHub: https://github.com/wmostert76/Shutter");
             sb.AppendLine("License: MIT");
-            sb.AppendLine("Mad by WAM-Sofware (c) since 1997.");
+            sb.AppendLine("Made by WAM-Sofware (c) since 1997.");
             return sb.ToString().Trim();
         }
 

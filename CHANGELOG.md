@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.0.4 - 2025-12-15
+- Tekstfix: "Made by WAM-Sofware (c) since 1997."
+
 ## v1.0.3 - 2025-12-15
 - Leuke About box (Over...) met versie/info + copy knop
 
