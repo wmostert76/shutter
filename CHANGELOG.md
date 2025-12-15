@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.5 - 2025-12-15
+- GUI: Over... knop volledig zichtbaar (meer ruimte in onderste knoppenbalk)
+- About box: mooiere kleuren in de header
+
 ## v1.0.4 - 2025-12-15
 - Tekstfix: "Made by WAM-Sofware (c) since 1997."
 

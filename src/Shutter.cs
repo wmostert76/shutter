@@ -15,8 +15,8 @@ using System.Windows.Forms;
 [assembly: AssemblyProduct("Shutter")]
 [assembly: AssemblyCompany("WAM-Software")]
 [assembly: AssemblyCopyright("Made by WAM-Sofware (c) since 1997.")]
-[assembly: AssemblyVersion("1.0.4.0")]
-[assembly: AssemblyFileVersion("1.0.4.0")]
+[assembly: AssemblyVersion("1.0.5.0")]
+[assembly: AssemblyFileVersion("1.0.5.0")]
 
 namespace Shutter
 {
@@ -34,7 +34,7 @@ namespace Shutter
     internal sealed class MainForm : Form
     {
         private const string AppTitle = "Shutter";
-        private const string VersionLabel = "v1.0.4";
+        private const string VersionLabel = "v1.0.5";
         private const int MaxShutdownSeconds = 315360000; // shutdown.exe /t max
 
         private readonly MonthCalendar _calendar;
@@ -217,7 +217,7 @@ namespace Shutter
 
             var bottom = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
             bottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            bottom.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 260));
+            bottom.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 380));
             bottom.Controls.Add(footer, 0, 0);
             bottom.Controls.Add(buttonPanel, 1, 0);
             root.Controls.Add(bottom, 0, 2);
@@ -890,17 +890,31 @@ namespace Shutter
                 return;
             }
 
-            using (var brush = new LinearGradientBrush(rect, Color.FromArgb(30, 48, 92), Color.FromArgb(18, 22, 30), LinearGradientMode.ForwardDiagonal))
+            using (var brush = new LinearGradientBrush(rect, Color.Black, Color.Black, LinearGradientMode.ForwardDiagonal))
             {
+                var blend = new ColorBlend();
+                blend.Positions = new float[] { 0f, 0.55f, 1f };
+                blend.Colors = new Color[]
+                {
+                    Color.FromArgb(255, 58, 170, 255),
+                    Color.FromArgb(255, 30, 48, 92),
+                    Color.FromArgb(255, 18, 22, 30)
+                };
+                brush.InterpolationColors = blend;
                 g.FillRectangle(brush, rect);
             }
 
-            using (var highlight = new Pen(Color.FromArgb(50, 255, 255, 255), 2f))
+            using (var highlight = new Pen(Color.FromArgb(40, 255, 255, 255), 2f))
             {
                 g.DrawLine(highlight, 0, rect.Height - 1, rect.Width, rect.Height - 1);
             }
 
-            using (var dotBrush = new SolidBrush(Color.FromArgb(35, 255, 255, 255)))
+            using (var accent = new Pen(Color.FromArgb(140, 82, 180, 255), 3f))
+            {
+                g.DrawLine(accent, 0, rect.Height - 2, rect.Width, rect.Height - 2);
+            }
+
+            using (var dotBrush = new SolidBrush(Color.FromArgb(28, 255, 255, 255)))
             {
                 g.FillEllipse(dotBrush, rect.Width - 120, 14, 90, 90);
                 g.FillEllipse(dotBrush, rect.Width - 78, 56, 40, 40);
