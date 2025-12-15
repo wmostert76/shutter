@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.0.7 - 2025-12-15
+- Voorkom dubbel starten: bestaande instance wordt geactiveerd (ook vanuit tray)
+
 ## v1.0.6 - 2025-12-15
 - About box header: tekst nu leesbaar (geen grijze panel achtergrond)
 

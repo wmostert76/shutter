@@ -8,6 +8,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
@@ -15,26 +16,72 @@ using System.Windows.Forms;
 [assembly: AssemblyProduct("Shutter")]
 [assembly: AssemblyCompany("WAM-Software")]
 [assembly: AssemblyCopyright("Made by WAM-Sofware (c) since 1997.")]
-[assembly: AssemblyVersion("1.0.6.0")]
-[assembly: AssemblyFileVersion("1.0.6.0")]
+[assembly: AssemblyVersion("1.0.7.0")]
+[assembly: AssemblyFileVersion("1.0.7.0")]
 
 namespace Shutter
 {
     internal static class Program
     {
+        private const string AppTitle = "Shutter";
+        private const string SingleInstanceMutexName = "Local\\WAMSoftware.Shutter.SingleInstance";
+        private const string ShowExistingMessageName = "WAMSoftware.Shutter.ShowExisting";
+
+        internal static readonly int ShowExistingMessageId = NativeMethods.RegisterWindowMessage(ShowExistingMessageName);
+
         [STAThread]
         private static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            bool createdNew;
+            using (var mutex = new System.Threading.Mutex(true, SingleInstanceMutexName, out createdNew))
+            {
+                if (!createdNew)
+                {
+                    TryActivateExistingInstance();
+                    return;
+                }
+
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new MainForm());
+            }
         }
+
+        private static void TryActivateExistingInstance()
+        {
+            try
+            {
+                if (ShowExistingMessageId != 0)
+                {
+                    NativeMethods.PostMessage((IntPtr)NativeMethods.HWND_BROADCAST, ShowExistingMessageId, IntPtr.Zero, IntPtr.Zero);
+                    return;
+                }
+            }
+            catch { }
+
+            try
+            {
+                MessageBox.Show(AppTitle + " draait al.", AppTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch { }
+        }
+    }
+
+    internal static class NativeMethods
+    {
+        internal const int HWND_BROADCAST = 0xffff;
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        internal static extern int RegisterWindowMessage(string lpString);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        internal static extern bool PostMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
     }
 
     internal sealed class MainForm : Form
     {
         private const string AppTitle = "Shutter";
-        private const string VersionLabel = "v1.0.6";
+        private const string VersionLabel = "v1.0.7";
         private const int MaxShutdownSeconds = 315360000; // shutdown.exe /t max
 
         private readonly MonthCalendar _calendar;
@@ -281,6 +328,17 @@ namespace Shutter
             };
 
             UpdateComputed();
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == Program.ShowExistingMessageId)
+            {
+                ShowFromTray();
+                return;
+            }
+
+            base.WndProc(ref m);
         }
 
         private void InitializeTray()
