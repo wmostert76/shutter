@@ -1,0 +1,7 @@
+.vs/
+dist/
+*.exe
+*.pdb
+*.log
+*.user
+*.suo
