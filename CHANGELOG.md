@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.0.6 - 2025-12-15
+- About box header: tekst nu leesbaar (geen grijze panel achtergrond)
+
 ## v1.0.5 - 2025-12-15
 - GUI: Over... knop volledig zichtbaar (meer ruimte in onderste knoppenbalk)
 - About box: mooiere kleuren in de header

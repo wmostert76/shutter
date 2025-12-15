@@ -15,8 +15,8 @@ using System.Windows.Forms;
 [assembly: AssemblyProduct("Shutter")]
 [assembly: AssemblyCompany("WAM-Software")]
 [assembly: AssemblyCopyright("Made by WAM-Sofware (c) since 1997.")]
-[assembly: AssemblyVersion("1.0.5.0")]
-[assembly: AssemblyFileVersion("1.0.5.0")]
+[assembly: AssemblyVersion("1.0.6.0")]
+[assembly: AssemblyFileVersion("1.0.6.0")]
 
 namespace Shutter
 {
@@ -34,7 +34,7 @@ namespace Shutter
     internal sealed class MainForm : Form
     {
         private const string AppTitle = "Shutter";
-        private const string VersionLabel = "v1.0.5";
+        private const string VersionLabel = "v1.0.6";
         private const int MaxShutdownSeconds = 315360000; // shutdown.exe /t max
 
         private readonly MonthCalendar _calendar;
@@ -704,6 +704,15 @@ namespace Shutter
         }
     }
 
+    internal sealed class DoubleBufferedPanel : Panel
+    {
+        public DoubleBufferedPanel()
+        {
+            DoubleBuffered = true;
+            ResizeRedraw = true;
+        }
+    }
+
     internal sealed class AboutForm : Form
     {
         private readonly Icon _icon;
@@ -734,35 +743,15 @@ namespace Shutter
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
             Controls.Add(root);
 
-            var header = new Panel { Dock = DockStyle.Fill };
+            var header = new DoubleBufferedPanel { Dock = DockStyle.Fill };
             header.Paint += Header_Paint;
             root.Controls.Add(header, 0, 0);
 
-            var headerLayout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(16, 14, 16, 14),
-                ColumnCount = 2
-            };
-            headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92));
-            headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            header.Controls.Add(headerLayout);
-
-            var picture = new PictureBox
-            {
-                SizeMode = PictureBoxSizeMode.CenterImage,
-                Dock = DockStyle.Fill
-            };
             try
             {
                 _iconImage = _icon.ToBitmap();
-                picture.Image = _iconImage;
             }
             catch { }
-            headerLayout.Controls.Add(picture, 0, 0);
-
-            var titlePanel = new Panel { Dock = DockStyle.Fill };
-            headerLayout.Controls.Add(titlePanel, 1, 0);
 
             var title = new Label
             {
@@ -770,7 +759,8 @@ namespace Shutter
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold),
                 AutoSize = true,
-                Location = new Point(0, 4)
+                BackColor = Color.Transparent,
+                Location = new Point(118, 16)
             };
             var subtitle = new Label
             {
@@ -778,19 +768,21 @@ namespace Shutter
                 ForeColor = Color.FromArgb(220, 255, 255, 255),
                 Font = new Font("Segoe UI", 10.5f, FontStyle.Regular),
                 AutoSize = true,
-                Location = new Point(2, 48)
+                BackColor = Color.Transparent,
+                Location = new Point(120, 56)
             };
             var versionLabel = new Label
             {
                 Text = "Version: " + GetFileVersion(),
-                ForeColor = Color.FromArgb(200, 255, 255, 255),
+                ForeColor = Color.FromArgb(215, 255, 255, 255),
                 Font = new Font("Segoe UI", 9.5f, FontStyle.Regular),
                 AutoSize = true,
-                Location = new Point(2, 74)
+                BackColor = Color.Transparent,
+                Location = new Point(120, 80)
             };
-            titlePanel.Controls.Add(title);
-            titlePanel.Controls.Add(subtitle);
-            titlePanel.Controls.Add(versionLabel);
+            header.Controls.Add(title);
+            header.Controls.Add(subtitle);
+            header.Controls.Add(versionLabel);
 
             var bodyPanel = new Panel
             {
@@ -902,6 +894,17 @@ namespace Shutter
                 };
                 brush.InterpolationColors = blend;
                 g.FillRectangle(brush, rect);
+            }
+
+            if (_iconImage != null)
+            {
+                var iconRect = new Rectangle(24, 24, 72, 72);
+                using (var shadow = new SolidBrush(Color.FromArgb(80, 0, 0, 0)))
+                {
+                    g.FillEllipse(shadow, iconRect.X + 2, iconRect.Y + 3, iconRect.Width, iconRect.Height);
+                }
+
+                g.DrawImage(_iconImage, iconRect);
             }
 
             using (var highlight = new Pen(Color.FromArgb(40, 255, 255, 255), 2f))
