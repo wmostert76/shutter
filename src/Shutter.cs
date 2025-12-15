@@ -5,6 +5,8 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
@@ -13,8 +15,8 @@ using System.Windows.Forms;
 [assembly: AssemblyProduct("Shutter")]
 [assembly: AssemblyCompany("WAM-Software")]
 [assembly: AssemblyCopyright("Mad by WAM-Sofware (c) since 1997.")]
-[assembly: AssemblyVersion("1.0.2.0")]
-[assembly: AssemblyFileVersion("1.0.2.0")]
+[assembly: AssemblyVersion("1.0.3.0")]
+[assembly: AssemblyFileVersion("1.0.3.0")]
 
 namespace Shutter
 {
@@ -32,7 +34,7 @@ namespace Shutter
     internal sealed class MainForm : Form
     {
         private const string AppTitle = "Shutter";
-        private const string VersionLabel = "v1.0.2";
+        private const string VersionLabel = "v1.0.3";
         private const int MaxShutdownSeconds = 315360000; // shutdown.exe /t max
 
         private readonly MonthCalendar _calendar;
@@ -47,6 +49,7 @@ namespace Shutter
         private readonly TextBox _commandBox;
         private readonly Button _scheduleButton;
         private readonly Button _abortButton;
+        private readonly Button _aboutButton;
         private readonly Timer _uiTimer;
         private bool _countdownActive;
         private DateTime _countdownTarget;
@@ -57,6 +60,7 @@ namespace Shutter
         private ToolStripMenuItem _trayToggleItem;
         private ToolStripMenuItem _trayStartItem;
         private ToolStripMenuItem _trayStopItem;
+        private ToolStripMenuItem _trayAboutItem;
         private bool _allowExit;
         private bool _minimizeBalloonShown;
         private Icon _appIcon;
@@ -203,10 +207,13 @@ namespace Shutter
             };
             _scheduleButton = new Button { Text = "Start", Width = 110, Height = 28, Margin = new Padding(6, 6, 0, 6) };
             _abortButton = new Button { Text = "Stop", Width = 110, Height = 28, Margin = new Padding(6, 6, 0, 6) };
+            _aboutButton = new Button { Text = "Over...", Width = 110, Height = 28, Margin = new Padding(6, 6, 0, 6) };
             _scheduleButton.Click += (s, e) => Schedule();
             _abortButton.Click += (s, e) => Abort();
+            _aboutButton.Click += (s, e) => ShowAbout();
             buttonPanel.Controls.Add(_scheduleButton);
             buttonPanel.Controls.Add(_abortButton);
+            buttonPanel.Controls.Add(_aboutButton);
 
             var bottom = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
             bottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -282,11 +289,13 @@ namespace Shutter
             _trayToggleItem = new ToolStripMenuItem("Open");
             _trayStartItem = new ToolStripMenuItem("Start");
             _trayStopItem = new ToolStripMenuItem("Stop");
+            _trayAboutItem = new ToolStripMenuItem("Over...");
             var exitItem = new ToolStripMenuItem("Afsluiten");
 
             _trayToggleItem.Click += (s, e) => ToggleWindowVisibility();
             _trayStartItem.Click += (s, e) => Schedule();
             _trayStopItem.Click += (s, e) => Abort();
+            _trayAboutItem.Click += (s, e) => ShowAbout();
             exitItem.Click += (s, e) =>
             {
                 _allowExit = true;
@@ -297,6 +306,8 @@ namespace Shutter
             _trayMenu.Items.Add(new ToolStripSeparator());
             _trayMenu.Items.Add(_trayStartItem);
             _trayMenu.Items.Add(_trayStopItem);
+            _trayMenu.Items.Add(new ToolStripSeparator());
+            _trayMenu.Items.Add(_trayAboutItem);
             _trayMenu.Items.Add(new ToolStripSeparator());
             _trayMenu.Items.Add(exitItem);
 
@@ -633,6 +644,20 @@ namespace Shutter
             }
         }
 
+        private void ShowAbout()
+        {
+            using (var about = new AboutForm(_appIcon))
+            {
+                if (Visible && WindowState != FormWindowState.Minimized)
+                {
+                    about.ShowDialog(this);
+                    return;
+                }
+
+                about.ShowDialog();
+            }
+        }
+
         private static ShutdownResult RunShutdown(string arguments)
         {
             var psi = new ProcessStartInfo
@@ -675,6 +700,388 @@ namespace Shutter
             {
                 ExitCode = exitCode;
                 Output = output ?? "";
+            }
+        }
+    }
+
+    internal sealed class AboutForm : Form
+    {
+        private readonly Icon _icon;
+        private Image _iconImage;
+
+        public AboutForm(Icon appIcon)
+        {
+            _icon = appIcon != null ? (Icon)appIcon.Clone() : (Icon)SystemIcons.Application.Clone();
+            Icon = _icon;
+
+            Text = "Over Shutter";
+            Font = new Font("Segoe UI", 9f);
+            StartPosition = FormStartPosition.CenterScreen;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            ShowInTaskbar = false;
+            ClientSize = new Size(640, 420);
+
+            var root = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                RowCount = 3,
+                ColumnCount = 1
+            };
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+            Controls.Add(root);
+
+            var header = new Panel { Dock = DockStyle.Fill };
+            header.Paint += Header_Paint;
+            root.Controls.Add(header, 0, 0);
+
+            var headerLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(16, 14, 16, 14),
+                ColumnCount = 2
+            };
+            headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92));
+            headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            header.Controls.Add(headerLayout);
+
+            var picture = new PictureBox
+            {
+                SizeMode = PictureBoxSizeMode.CenterImage,
+                Dock = DockStyle.Fill
+            };
+            try
+            {
+                _iconImage = _icon.ToBitmap();
+                picture.Image = _iconImage;
+            }
+            catch { }
+            headerLayout.Controls.Add(picture, 0, 0);
+
+            var titlePanel = new Panel { Dock = DockStyle.Fill };
+            headerLayout.Controls.Add(titlePanel, 1, 0);
+
+            var title = new Label
+            {
+                Text = "Shutter",
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold),
+                AutoSize = true,
+                Location = new Point(0, 4)
+            };
+            var subtitle = new Label
+            {
+                Text = "Mad by WAM-Sofware (c) since 1997.",
+                ForeColor = Color.FromArgb(220, 255, 255, 255),
+                Font = new Font("Segoe UI", 10.5f, FontStyle.Regular),
+                AutoSize = true,
+                Location = new Point(2, 48)
+            };
+            var versionLabel = new Label
+            {
+                Text = "Version: " + GetFileVersion(),
+                ForeColor = Color.FromArgb(200, 255, 255, 255),
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Regular),
+                AutoSize = true,
+                Location = new Point(2, 74)
+            };
+            titlePanel.Controls.Add(title);
+            titlePanel.Controls.Add(subtitle);
+            titlePanel.Controls.Add(versionLabel);
+
+            var bodyPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(16, 14, 16, 10),
+                BackColor = Color.White
+            };
+            root.Controls.Add(bodyPanel, 0, 1);
+
+            var body = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 6
+            };
+            body.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+            body.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
+            body.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+            body.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
+            body.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+            body.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            bodyPanel.Controls.Add(body);
+
+            body.Controls.Add(CreateSection("Wat is het?"), 0, 0);
+            body.Controls.Add(CreateParagraph("Plan een shutdown of restart met een kalender + tijd. Shutter berekent de /t seconden en toont een live aftelmechanisme."), 0, 1);
+
+            body.Controls.Add(CreateSection("Highlights"), 0, 2);
+            body.Controls.Add(CreateBullets(new[]
+            {
+                "Start/Stop knoppen",
+                "Remote target via shutdown /m \\\\SERVER",
+                "Systeemvak icoon (tray) met menu",
+                "Live countdown (HH:mm:ss + seconden)"
+            }), 0, 3);
+
+            body.Controls.Add(CreateSection("Info"), 0, 4);
+            body.Controls.Add(CreateInfoTable(), 0, 5);
+
+            var buttons = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.RightToLeft,
+                Padding = new Padding(12, 10, 12, 10),
+                BackColor = Color.FromArgb(245, 245, 245),
+                WrapContents = false
+            };
+            root.Controls.Add(buttons, 0, 2);
+
+            var closeButton = new Button { Text = "Sluiten", Width = 110, Height = 28, Margin = new Padding(8, 0, 0, 0) };
+            closeButton.Click += (s, e) => Close();
+            AcceptButton = closeButton;
+
+            var openButton = new Button { Text = "Open GitHub", Width = 110, Height = 28, Margin = new Padding(8, 0, 0, 0) };
+            openButton.Click += (s, e) => OpenUrl("https://github.com/wmostert76/Shutter");
+
+            var copyButton = new Button { Text = "Kopieer info", Width = 110, Height = 28, Margin = new Padding(8, 0, 0, 0) };
+            copyButton.Click += (s, e) =>
+            {
+                try
+                {
+                    Clipboard.SetText(BuildCopyText());
+                    MessageBox.Show("Info gekopieerd naar het klembord.", "Over Shutter", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Over Shutter", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            };
+
+            buttons.Controls.Add(closeButton);
+            buttons.Controls.Add(openButton);
+            buttons.Controls.Add(copyButton);
+
+            FormClosed += (s, e) =>
+            {
+                if (_iconImage != null)
+                {
+                    _iconImage.Dispose();
+                    _iconImage = null;
+                }
+
+                if (_icon != null)
+                {
+                    _icon.Dispose();
+                }
+            };
+        }
+
+        private void Header_Paint(object sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            var rect = ((Panel)sender).ClientRectangle;
+            if (rect.Width <= 0 || rect.Height <= 0)
+            {
+                return;
+            }
+
+            using (var brush = new LinearGradientBrush(rect, Color.FromArgb(30, 48, 92), Color.FromArgb(18, 22, 30), LinearGradientMode.ForwardDiagonal))
+            {
+                g.FillRectangle(brush, rect);
+            }
+
+            using (var highlight = new Pen(Color.FromArgb(50, 255, 255, 255), 2f))
+            {
+                g.DrawLine(highlight, 0, rect.Height - 1, rect.Width, rect.Height - 1);
+            }
+
+            using (var dotBrush = new SolidBrush(Color.FromArgb(35, 255, 255, 255)))
+            {
+                g.FillEllipse(dotBrush, rect.Width - 120, 14, 90, 90);
+                g.FillEllipse(dotBrush, rect.Width - 78, 56, 40, 40);
+            }
+        }
+
+        private static Control CreateSection(string text)
+        {
+            return new Label
+            {
+                Text = text,
+                Font = new Font("Segoe UI Semibold", 11.5f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(35, 35, 35),
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 6)
+            };
+        }
+
+        private static Control CreateParagraph(string text)
+        {
+            return new Label
+            {
+                Text = text,
+                Font = new Font("Segoe UI", 10f, FontStyle.Regular),
+                ForeColor = Color.FromArgb(55, 55, 55),
+                AutoSize = true,
+                MaximumSize = new Size(590, 0),
+                Margin = new Padding(0, 0, 0, 10)
+            };
+        }
+
+        private static Control CreateBullets(string[] bullets)
+        {
+            var panel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false
+            };
+
+            foreach (var b in bullets)
+            {
+                panel.Controls.Add(new Label
+                {
+                    Text = "• " + b,
+                    Font = new Font("Segoe UI", 10f, FontStyle.Regular),
+                    ForeColor = Color.FromArgb(55, 55, 55),
+                    AutoSize = true,
+                    MaximumSize = new Size(590, 0),
+                    Margin = new Padding(0, 2, 0, 2)
+                });
+            }
+
+            return panel;
+        }
+
+        private Control CreateInfoTable()
+        {
+            var info = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 0,
+                AutoSize = true
+            };
+            info.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
+            info.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+            AddInfoRow(info, "Versie", new Label { Text = GetFileVersion(), AutoSize = true });
+
+            var exe = new Label { Text = Application.ExecutablePath, AutoSize = true, MaximumSize = new Size(470, 0) };
+            AddInfoRow(info, "Exe", exe);
+
+            try
+            {
+                var ts = File.GetLastWriteTime(Application.ExecutablePath).ToString("yyyy-MM-dd HH:mm:ss");
+                AddInfoRow(info, "Build", new Label { Text = ts, AutoSize = true });
+            }
+            catch { }
+
+            AddInfoRow(info, "Windows", new Label { Text = Environment.OSVersion.ToString(), AutoSize = true, MaximumSize = new Size(470, 0) });
+            AddInfoRow(info, ".NET", new Label { Text = Environment.Version.ToString(), AutoSize = true });
+
+            var gh = new LinkLabel
+            {
+                Text = "wmostert76/Shutter",
+                AutoSize = true,
+                LinkColor = Color.FromArgb(33, 150, 243),
+                ActiveLinkColor = Color.FromArgb(255, 87, 34),
+                VisitedLinkColor = Color.FromArgb(106, 27, 154)
+            };
+            gh.Links.Add(0, gh.Text.Length, "https://github.com/wmostert76/Shutter");
+            gh.LinkClicked += (s, e) => OpenUrl(e.Link.LinkData as string);
+            AddInfoRow(info, "GitHub", gh);
+
+            AddInfoRow(info, "License", new Label { Text = "MIT", AutoSize = true });
+
+            return info;
+        }
+
+        private static void AddInfoRow(TableLayoutPanel table, string key, Control value)
+        {
+            var row = table.RowCount;
+            table.RowCount = row + 1;
+            table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            var keyLabel = new Label
+            {
+                Text = key + ":",
+                AutoSize = true,
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(45, 45, 45),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left,
+                Margin = new Padding(0, 2, 10, 6)
+            };
+
+            value.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            value.Margin = new Padding(0, 2, 0, 6);
+
+            table.Controls.Add(keyLabel, 0, row);
+            table.Controls.Add(value, 1, row);
+        }
+
+        private static string GetFileVersion()
+        {
+            try
+            {
+                var info = FileVersionInfo.GetVersionInfo(Application.ExecutablePath);
+                if (!string.IsNullOrWhiteSpace(info.FileVersion))
+                {
+                    return info.FileVersion;
+                }
+            }
+            catch { }
+
+            try
+            {
+                var v = Assembly.GetExecutingAssembly().GetName().Version;
+                if (v != null)
+                {
+                    return v.ToString();
+                }
+            }
+            catch { }
+
+            return "unknown";
+        }
+
+        private static string BuildCopyText()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("Shutter");
+            sb.AppendLine("Version: " + GetFileVersion());
+            sb.AppendLine("Exe: " + Application.ExecutablePath);
+
+            try
+            {
+                sb.AppendLine("Exe modified: " + File.GetLastWriteTime(Application.ExecutablePath).ToString("yyyy-MM-dd HH:mm:ss"));
+            }
+            catch { }
+
+            sb.AppendLine("GitHub: https://github.com/wmostert76/Shutter");
+            sb.AppendLine("License: MIT");
+            sb.AppendLine("Mad by WAM-Sofware (c) since 1997.");
+            return sb.ToString().Trim();
+        }
+
+        private static void OpenUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Over Shutter", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.0.3 - 2025-12-15
+- Leuke About box (Over...) met versie/info + copy knop
+
 ## v1.0.2 - 2025-12-15
 - Mooi app/tray icoon (app.ico) + generator script
 

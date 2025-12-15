@@ -18,6 +18,7 @@
 - **Stop/Annuleer** via `shutdown /a`
 - Optioneel **force** (`/f`)
 - **Systeemvak icoon (tray)** met menu: Open/Verberg, Start, Stop, Afsluiten + eigen icoon
+- **Over... / About box** met versie + info
 
 ## Gebruik
 1) Start `dist/Shutter.exe`
