@@ -13,8 +13,8 @@ using System.Windows.Forms;
 [assembly: AssemblyProduct("Shutter")]
 [assembly: AssemblyCompany("WAM-Software")]
 [assembly: AssemblyCopyright("Mad by WAM-Sofware (c) since 1997.")]
-[assembly: AssemblyVersion("1.0.1.0")]
-[assembly: AssemblyFileVersion("1.0.1.0")]
+[assembly: AssemblyVersion("1.0.2.0")]
+[assembly: AssemblyFileVersion("1.0.2.0")]
 
 namespace Shutter
 {
@@ -32,7 +32,7 @@ namespace Shutter
     internal sealed class MainForm : Form
     {
         private const string AppTitle = "Shutter";
-        private const string VersionLabel = "v1.0.1";
+        private const string VersionLabel = "v1.0.2";
         private const int MaxShutdownSeconds = 315360000; // shutdown.exe /t max
 
         private readonly MonthCalendar _calendar;
@@ -59,6 +59,8 @@ namespace Shutter
         private ToolStripMenuItem _trayStopItem;
         private bool _allowExit;
         private bool _minimizeBalloonShown;
+        private Icon _appIcon;
+        private Icon _trayIconImage;
 
         public MainForm()
         {
@@ -67,8 +69,10 @@ namespace Shutter
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
-            Icon = SystemIcons.Application;
             ClientSize = new Size(780, 520);
+
+            _appIcon = LoadAppIcon();
+            Icon = _appIcon ?? SystemIcons.Application;
 
             var root = new TableLayoutPanel
             {
@@ -255,6 +259,18 @@ namespace Shutter
                     _trayMenu.Dispose();
                     _trayMenu = null;
                 }
+
+                if (_trayIconImage != null)
+                {
+                    _trayIconImage.Dispose();
+                    _trayIconImage = null;
+                }
+
+                if (_appIcon != null)
+                {
+                    _appIcon.Dispose();
+                    _appIcon = null;
+                }
             };
 
             UpdateComputed();
@@ -284,9 +300,10 @@ namespace Shutter
             _trayMenu.Items.Add(new ToolStripSeparator());
             _trayMenu.Items.Add(exitItem);
 
+            _trayIconImage = _appIcon != null ? (Icon)_appIcon.Clone() : (Icon)SystemIcons.Application.Clone();
             _trayIcon = new NotifyIcon
             {
-                Icon = SystemIcons.Application,
+                Icon = _trayIconImage,
                 Text = AppTitle,
                 Visible = true,
                 ContextMenuStrip = _trayMenu
@@ -601,6 +618,19 @@ namespace Shutter
             }
 
             return string.Format("{0:00}:{1:00}:{2:00}", ts.Hours, ts.Minutes, ts.Seconds);
+        }
+
+        private static Icon LoadAppIcon()
+        {
+            try
+            {
+                var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                return icon;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static ShutdownResult RunShutdown(string arguments)

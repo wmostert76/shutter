@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.0.2 - 2025-12-15
+- Mooi app/tray icoon (app.ico) + generator script
+
 ## v1.0.1 - 2025-12-15
 - Start/Stop knoppen + aftelmechanisme (live countdown)
 - Systeemvak icoon (tray) met menu

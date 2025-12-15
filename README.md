@@ -17,7 +17,7 @@
 - Optioneel doelserver: leeg = lokaal, of computernaam/IP voor remote (`/m \\\\SERVER`)
 - **Stop/Annuleer** via `shutdown /a`
 - Optioneel **force** (`/f`)
-- **Systeemvak icoon (tray)** met menu: Open/Verberg, Start, Stop, Afsluiten
+- **Systeemvak icoon (tray)** met menu: Open/Verberg, Start, Stop, Afsluiten + eigen icoon
 
 ## Gebruik
 1) Start `dist/Shutter.exe`
