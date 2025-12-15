@@ -1,11 +1,11 @@
-```
+f```
   ███████╗██╗  ██╗██╗   ██╗████████╗████████╗███████╗██████╗
   ██╔════╝██║  ██║██║   ██║╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
   ███████╗███████║██║   ██║   ██║      ██║   █████╗  ██████╔╝
   ╚════██║██╔══██║██║   ██║   ██║      ██║   ██╔══╝  ██╔══██╗
   ███████║██║  ██║╚██████╔╝   ██║      ██║   ███████╗██║  ██║
   ╚══════╝╚═╝  ╚═╝ ╚═════╝    ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-  Mad by WAM-Sofware (c) since 1997.
+  Made by WAM-Sofware (c) since 1997.
 ```
 
 **Shutter** is een kleine Windows GUI om een **shutdown** of **restart** te plannen (lokaal of remote) op basis van een datum/tijd uit een kalender. De app berekent de `/t` seconden en toont die live in de GUI.
