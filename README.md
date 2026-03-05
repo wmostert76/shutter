@@ -1,29 +1,42 @@
-﻿# Shutter
+```
+  ███████╗██╗  ██╗██╗   ██╗████████╗████████╗███████╗██████╗
+  ██╔════╝██║  ██║██║   ██║╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
+  ███████╗███████║██║   ██║   ██║      ██║   █████╗  ██████╔╝
+  ╚════██║██╔══██║██║   ██║   ██║      ██║   ██╔══╝  ██╔══██╗
+  ███████║██║  ██║╚██████╔╝   ██║      ██║   ███████╗██║  ██║
+  ╚══════╝╚═╝  ╚═╝ ╚═════╝    ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
+  Made by WAM-Sofware (c) since 1997.
+```
 
-## Overview
-- Repository: $name
-- Owner: wmostert76
-- Default branch: $branch
+**Shutter** is een kleine Windows GUI om een **shutdown** of **restart** te plannen (lokaal of remote) op basis van een datum/tijd uit een kalender. De app berekent de `/t` seconden en toont die live in de GUI.
 
 ## Features
-- Consistente repo-opmaak
-- Automatische versie-releases
-- Automatische changelog updates
+- Kies **Shutdown** of **Restart**
+- Kies datum via **kalender** + tijd (HH:mm:ss)
+- Toont **seconden tot actie** + **aftel mechanisme** (live countdown)
+- Optioneel doelserver: leeg = lokaal, of computernaam/IP voor remote (`/m \\\\SERVER`)
+- **Stop/Annuleer** via `shutdown /a`
+- Optioneel **force** (`/f`)
+- **Systeemvak icoon (tray)** met menu: Open/Verberg, Start, Stop, Afsluiten + eigen icoon
+- **Over... / About box** met versie + info
 
-## Getting Started
-`ash
-git clone https://github.com/wmostert76/shutter.git
-cd shutter
-`
+## Gebruik
+1) Start `dist/Shutter.exe`
+2) Vul optioneel een servernaam/IP in (leeg = lokaal)
+3) Kies datum in de kalender + tijd
+4) Klik **Start** en bevestig
+5) Stop/annuleer indien nodig met **Stop** (of via het tray menu)
 
-## Usage
-- Werk op de default branch voor standaard release-flow.
-- Elke push triggert automatische versieverhoging en release-notes.
+> Remote shutdown/restart vereist rechten op de doelserver en dat remote shutdown toegestaan is in de Windows configuratie.
 
-## Contributing
-1. Maak je wijziging.
-2. Commit en push.
-3. Controleer de Actions en release-output.
+## Build
+Vereist: .NET Framework 4.x (csc.exe aanwezig op Windows).
+
+```powershell
+./build.ps1
+```
+
+Output: `dist/Shutter.exe`
 
 ## License
-Proprietary (tenzij anders aangegeven).
+MIT
