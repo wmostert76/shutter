@@ -1,3 +1,7 @@
+## v1.0.13-test - 2026-04-01
+
+Testing .exe upload
+
 ## v1.0.12-test - 2026-04-01
 
 Testing with permissions fix
