@@ -1,3 +1,7 @@
+## v1.0.12-test - 2026-04-01
+
+Testing with permissions fix
+
 ## v1.0.11-test - 2026-04-01
 
 Testing the build-release workflow
