@@ -20,46 +20,55 @@ jobs:
 
       - name: Extract version from code
         id: version
-        shell: bash
+        shell: powershell
         run: |
-          set -euo pipefail
-          # Extract version from AssemblyVersion in Shutter.cs
-          version=$(grep -oP '(?<=AssemblyVersion\(")[^"]+' src/Shutter.cs | head -1)
-          # Remove trailing .0 if present (1.0.7.0 -> 1.0.7)
-          version=${version%.*}
-          tag="v$version"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          $content = Get-Content "src/Shutter.cs" -Raw
+          if ($content -match 'AssemblyVersion\("([^"]+)"\)') {
+            $fullVersion = $matches[1]
+            # Remove trailing .0 (1.0.12.0 -> 1.0.12)
+            $version = $fullVersion -replace '\.0$', ''
+            $tag = "v$version"
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag"
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$version"
+            Write-Host "Extracted version: $version (tag: $tag)"
+          } else {
+            Write-Error "Could not extract version from Shutter.cs"
+            exit 1
+          }
 
       - name: Check if tag exists
         id: tag_check
-        shell: bash
+        shell: powershell
         run: |
-          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+          $tag = "${{ steps.version.outputs.tag }}"
+          try {
+            git rev-parse $tag 2>$null
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "exists=true"
+            Write-Host "Tag $tag already exists"
+          } catch {
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "exists=false"
+            Write-Host "Tag $tag does not exist"
+          }
 
       - name: Build release notes
         id: notes
-        shell: bash
+        shell: powershell
         run: |
-          set -euo pipefail
-          file=release_notes.md
-          echo "## Changes" > "$file"
-          echo >> "$file"
+          $tag = "${{ steps.version.outputs.tag }}"
+          $file = "release_notes.md"
+          "## Changes" | Out-File -FilePath $file -Encoding UTF8
+          "" | Out-File -FilePath $file -Encoding UTF8 -Append
           
           # Find previous tag
-          latest=$(git tag -l 'v*' --sort=-v:refname | grep -v "${{ steps.version.outputs.tag }}" | head -n 1)
+          $latest = git tag -l 'v*' --sort=-v:refname | Select-String -NotMatch $tag | Select-Object -First 1
           
-          if [[ -z "$latest" ]]; then
-            git log --no-merges --pretty=format:'- %s (%h)' >> "$file"
-          else
-            git log --no-merges --pretty=format:'- %s (%h)' "$latest..HEAD" >> "$file"
-          fi
+          if ([string]::IsNullOrEmpty($latest)) {
+            git log --no-merges --pretty=format:'- %s (%h)' | Out-File -FilePath $file -Encoding UTF8 -Append
+          } else {
+            git log --no-merges --pretty=format:'- %s (%h)' "$latest..HEAD" | Out-File -FilePath $file -Encoding UTF8 -Append
+          }
           
-          echo "file=$file" >> "$GITHUB_OUTPUT"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "file=$file"
 
       - name: Build with PowerShell
         if: steps.tag_check.outputs.exists == 'false'
