@@ -1,3 +1,7 @@
+## v1.0.11-test - 2026-04-01
+
+Testing the build-release workflow
+
 # Changelog
 
 ## v1.0.7 - 2025-12-15
