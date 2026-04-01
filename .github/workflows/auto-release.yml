@@ -1,4 +1,4 @@
-﻿name: Auto Release
+name: Auto Release
 
 on:
   push:
@@ -18,24 +18,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Calculate next version
+      - name: Extract version from code
         id: version
         shell: bash
         run: |
           set -euo pipefail
-          latest="$(git tag -l 'v*' --sort=-v:refname | head -n 1)"
-          if [[ -z "$latest" ]]; then
-            next="v1.0.0"
-            range=""
+          # Extract version from AssemblyVersion in Shutter.cs
+          version=$(grep -oP '(?<=AssemblyVersion\(")[^"]+' src/Shutter.cs | head -1)
+          # Remove trailing .0 if present (1.0.7.0 -> 1.0.7)
+          version=${version%.*}
+          tag="v$version"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag exists
+        id: tag_check
+        shell: bash
+        run: |
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
           else
-            raw="${latest#v}"
-            IFS='.' read -r major minor patch <<< "$raw"
-            patch=$((patch + 1))
-            next="v${major}.${minor}.${patch}"
-            range="${latest}..HEAD"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "next=$next" >> "$GITHUB_OUTPUT"
-          echo "range=$range" >> "$GITHUB_OUTPUT"
 
       - name: Build release notes
         id: notes
@@ -45,22 +49,29 @@ jobs:
           file=release_notes.md
           echo "## Changes" > "$file"
           echo >> "$file"
-          if [[ -z "${{ steps.version.outputs.range }}" ]]; then
-            echo "- Initial release." >> "$file"
+          
+          # Find previous tag
+          latest=$(git tag -l 'v*' --sort=-v:refname | grep -v "${{ steps.version.outputs.tag }}" | head -n 1)
+          
+          if [[ -z "$latest" ]]; then
+            git log --no-merges --pretty=format:'- %s (%h)' >> "$file"
           else
-            git log --no-merges --pretty=format:'- %s (%h)' "${{ steps.version.outputs.range }}" >> "$file"
+            git log --no-merges --pretty=format:'- %s (%h)' "$latest..HEAD" >> "$file"
           fi
+          
           echo "file=$file" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
+        if: steps.tag_check.outputs.exists == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.version.outputs.next }}"
-          git push origin "${{ steps.version.outputs.next }}"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
 
       - name: Create GitHub Release
+        if: steps.tag_check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.next }}
+          tag_name: ${{ steps.version.outputs.tag }}
           body_path: ${{ steps.notes.outputs.file }}
