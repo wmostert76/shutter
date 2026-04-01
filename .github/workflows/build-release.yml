@@ -2,7 +2,7 @@ name: Build Release
 
 on:
   release:
-    types: [published]
+    types: [published, created]
 
 jobs:
   build:
@@ -11,6 +11,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.release.tag_name }}
 
     - name: Build with PowerShell
       shell: powershell
@@ -21,3 +23,4 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: dist/Shutter.exe
+        tag_name: ${{ github.event.release.tag_name }}
