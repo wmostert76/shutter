@@ -9,88 +9,81 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  check:
     if: "!contains(github.event.head_commit.message, '[skip release]')"
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      skip: ${{ steps.tag_check.outputs.exists }}
+      notes_file: ${{ steps.notes.outputs.file }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Extract version from code
         id: version
-        shell: powershell
         run: |
-          $content = Get-Content "src/Shutter.cs" -Raw
-          if ($content -match 'AssemblyVersion\("([^"]+)"\)') {
-            $fullVersion = $matches[1]
-            # Remove trailing .0 (1.0.12.0 -> 1.0.12)
-            $version = $fullVersion -replace '\.0$', ''
-            $tag = "v$version"
-            Add-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag"
-            Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$version"
-            Write-Host "Extracted version: $version (tag: $tag)"
-          } else {
-            Write-Error "Could not extract version from Shutter.cs"
-            exit 1
-          }
+          version=$(grep -oE 'AssemblyVersion\("[0-9]+\.[0-9]+\.[0-9]+' src/Shutter.cs | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
       - name: Check if tag exists
         id: tag_check
-        shell: powershell
         run: |
-          $tag = "${{ steps.version.outputs.tag }}"
-          $ErrorActionPreference = 'SilentlyContinue'
-          git rev-parse $tag 2>$null
-          if ($LASTEXITCODE -eq 0) {
-            Add-Content -Path $env:GITHUB_OUTPUT -Value "exists=true"
-            Write-Host "Tag $tag already exists"
-          } else {
-            Add-Content -Path $env:GITHUB_OUTPUT -Value "exists=false"
-            Write-Host "Tag $tag does not exist"
-          }
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build release notes
         id: notes
         if: steps.tag_check.outputs.exists == 'false'
-        shell: powershell
         run: |
-          $tag = "${{ steps.version.outputs.tag }}"
-          $file = "release_notes.md"
-          "## Changes" | Out-File -FilePath $file -Encoding UTF8
-          "" | Out-File -FilePath $file -Encoding UTF8 -Append
-          
-          # Find previous tag
-          $ErrorActionPreference = 'SilentlyContinue'
-          $latest = (git tag -l 'v*' --sort=-v:refname 2>$null) | Where-Object { $_ -ne $tag } | Select-Object -First 1
-          
-          if ([string]::IsNullOrEmpty($latest)) {
-            git log --no-merges --pretty=format:'- %s (%h)' 2>$null | Out-File -FilePath $file -Encoding UTF8 -Append
-          } else {
-            git log --no-merges --pretty=format:'- %s (%h)' "$latest..HEAD" 2>$null | Out-File -FilePath $file -Encoding UTF8 -Append
-          }
-          
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "file=$file"
+          file=release_notes.md
+          prev=$(git tag -l 'v*' --sort=-v:refname | grep -v "${{ steps.version.outputs.tag }}" | head -1)
+          echo "## Changes" > "$file"
+          echo >> "$file"
+          if [[ -z "$prev" ]]; then
+            git log --no-merges --pretty=format:'- %s (%h)' >> "$file"
+          else
+            git log --no-merges --pretty=format:'- %s (%h)' "$prev..HEAD" >> "$file"
+          fi
+          echo "file=$file" >> "$GITHUB_OUTPUT"
 
-      - name: Build with PowerShell
+      - name: Upload release notes
         if: steps.tag_check.outputs.exists == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: ${{ steps.notes.outputs.file }}
+
+  build-and-release:
+    needs: check
+    if: needs.check.outputs.skip == 'false'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
         shell: powershell
-        run: |
-          .\build.ps1
+        run: .\build.ps1
 
-      - name: Create and push tag
-        if: steps.tag_check.outputs.exists == 'false'
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+
+      - name: Create tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.version.outputs.tag }}"
-          git push origin "${{ steps.version.outputs.tag }}"
+          git tag "${{ needs.check.outputs.tag }}"
+          git push origin "${{ needs.check.outputs.tag }}"
 
-      - name: Create GitHub Release with Exe
-        if: steps.tag_check.outputs.exists == 'false'
+      - name: Create Release with Exe
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          body_path: ${{ steps.notes.outputs.file }}
+          tag_name: ${{ needs.check.outputs.tag }}
+          body_path: release_notes.md
           files: dist/Shutter.exe
