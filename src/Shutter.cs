@@ -16,30 +16,38 @@ using System.Windows.Forms;
 [assembly: AssemblyProduct("Shutter")]
 [assembly: AssemblyCompany("WAM-Software")]
 [assembly: AssemblyCopyright("Made by WAM-Software (c) since 1997.")]
-[assembly: AssemblyVersion("1.2.0.0")]
-[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.0.7.0")]
+[assembly: AssemblyFileVersion("1.0.7.0")]
+[assembly: AssemblyInformationalVersion("1.0.7")]
 
 namespace Shutter
 {
     // â”€â”€ Colour palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     internal static class Theme
     {
-        public static readonly Color Bg        = Color.FromArgb(15,  17,  26);
-        public static readonly Color Surface   = Color.FromArgb(24,  28,  42);
-        public static readonly Color Card      = Color.FromArgb(32,  37,  56);
-        public static readonly Color Border    = Color.FromArgb(48,  55,  80);
-        public static readonly Color Accent    = Color.FromArgb(99,  179, 237);
-        public static readonly Color Danger    = Color.FromArgb(239, 83,  80);
-        public static readonly Color Success   = Color.FromArgb(102, 187, 106);
-        public static readonly Color Warning   = Color.FromArgb(255, 183, 77);
-        public static readonly Color TextPri   = Color.FromArgb(225, 232, 245);
-        public static readonly Color TextSec   = Color.FromArgb(130, 145, 175);
-        public static readonly Color TextMuted = Color.FromArgb(70,  85,  115);
-        public static readonly Font  FontSm    = new Font("Segoe UI", 8f,  FontStyle.Regular);
-        public static readonly Font  FontMd    = new Font("Segoe UI", 10f, FontStyle.Regular);
-        public static readonly Font  FontLg    = new Font("Segoe UI", 13f, FontStyle.Bold);
-        public static readonly Font  FontXl    = new Font("Segoe UI", 22f, FontStyle.Bold);
-        public static readonly Font  FontTitle = new Font("Segoe UI", 10f, FontStyle.Bold);
+        public static readonly Color Bg           = Color.FromArgb(6,  10,  18);
+        public static readonly Color Surface      = Color.FromArgb(14, 22, 36);
+        public static readonly Color Card         = Color.FromArgb(18, 30, 49);
+        public static readonly Color CardAlt      = Color.FromArgb(24, 39, 62);
+        public static readonly Color Border       = Color.FromArgb(55, 76, 109);
+        public static readonly Color Accent       = Color.FromArgb(57, 196, 191);
+        public static readonly Color AccentSoft   = Color.FromArgb(109, 225, 220);
+        public static readonly Color Highlight    = Color.FromArgb(255, 197, 87);
+        public static readonly Color Danger       = Color.FromArgb(239, 98, 90);
+        public static readonly Color Success      = Color.FromArgb(92, 201, 140);
+        public static readonly Color Warning      = Color.FromArgb(255, 183, 77);
+        public static readonly Color TextPri      = Color.FromArgb(238, 244, 252);
+        public static readonly Color TextSec      = Color.FromArgb(153, 178, 205);
+        public static readonly Color TextMuted    = Color.FromArgb(91, 112, 140);
+        public static readonly Color TitleBarGlow = Color.FromArgb(40, 95, 155, 230);
+        public static readonly Font  FontXs       = new Font("Segoe UI", 8f, FontStyle.Regular);
+        public static readonly Font  FontSm       = new Font("Segoe UI", 9f, FontStyle.Regular);
+        public static readonly Font  FontMd       = new Font("Segoe UI", 10f, FontStyle.Regular);
+        public static readonly Font  FontMdBold   = new Font("Segoe UI Semibold", 10f, FontStyle.Regular);
+        public static readonly Font  FontLg       = new Font("Segoe UI Semibold", 13f, FontStyle.Regular);
+        public static readonly Font  FontXl       = new Font("Bahnschrift SemiBold", 24f, FontStyle.Regular);
+        public static readonly Font  FontHero     = new Font("Bahnschrift SemiBold", 30f, FontStyle.Regular);
+        public static readonly Font  FontTitle    = new Font("Segoe UI Semibold", 10f, FontStyle.Regular);
     }
 
     // â”€â”€ P/Invoke â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -122,26 +130,46 @@ namespace Shutter
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
             Color fill, text, border;
-            if (_style == Style.Primary) {
-                fill   = _down ? Color.FromArgb(60, 140, 200) : _hover ? Color.FromArgb(80, 160, 220) : Theme.Accent;
+            Color fill2 = Color.Empty;
+            if (!Enabled) {
+                fill   = Theme.CardAlt;
+                text   = Theme.TextMuted;
+                border = Color.FromArgb(70, Theme.Border);
+            } else if (_style == Style.Primary) {
+                fill   = _down ? Color.FromArgb(25, 131, 138) : _hover ? Color.FromArgb(73, 215, 209) : Theme.Accent;
+                fill2  = _down ? Color.FromArgb(17, 109, 117) : _hover ? Color.FromArgb(34, 166, 171) : Color.FromArgb(20, 140, 151);
                 text   = Color.White;
                 border = Color.Transparent;
             } else if (_style == Style.Danger) {
-                fill   = _down ? Color.FromArgb(180, 60, 60) : _hover ? Color.FromArgb(220, 90, 88) : Theme.Danger;
+                fill   = _down ? Color.FromArgb(184, 70, 63) : _hover ? Color.FromArgb(236, 112, 101) : Theme.Danger;
+                fill2  = _down ? Color.FromArgb(153, 55, 49) : _hover ? Color.FromArgb(209, 82, 74) : Color.FromArgb(190, 70, 62);
                 text   = Color.White;
                 border = Color.Transparent;
             } else {
-                fill   = _down ? Color.FromArgb(40, 45, 65) : _hover ? Color.FromArgb(36, 42, 60) : Color.Transparent;
+                fill   = _down ? Color.FromArgb(24, 37, 56) : _hover ? Color.FromArgb(32, 48, 72) : Color.FromArgb(10, Theme.CardAlt);
+                fill2  = Color.FromArgb(5, Theme.Accent);
                 text   = Theme.TextSec;
                 border = Theme.Border;
             }
 
             using (var path = GfxHelper.RoundRect(new RectangleF(0, 0, Width - 1, Height - 1), 8))
             {
-                if (fill != Color.Transparent)
-                    using (var b = new SolidBrush(fill)) g.FillPath(b, path);
+                if (fill != Color.Transparent) {
+                    if (fill2 == Color.Empty) {
+                        using (var b = new SolidBrush(fill)) g.FillPath(b, path);
+                    } else {
+                        using (var b = new LinearGradientBrush(new Rectangle(0, 0, Width, Height), fill, fill2, LinearGradientMode.Vertical))
+                            g.FillPath(b, path);
+                    }
+                }
                 if (border != Color.Transparent)
                     using (var p = new Pen(border)) g.DrawPath(p, path);
+            }
+
+            if (Enabled && (_style == Style.Primary || _style == Style.Danger)) {
+                using (var glow = new Pen(Color.FromArgb(_hover ? 90 : 55, Color.White), 1f))
+                using (var path = GfxHelper.RoundRect(new RectangleF(1, 1, Width - 3, Height - 3), 7))
+                    g.DrawPath(glow, path);
             }
 
             var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
@@ -190,7 +218,7 @@ namespace Shutter
             float thumbX = _restart ? 0 : hw;
             Color thumbCol = _restart ? Theme.Success : Theme.Danger;
             using (var path = GfxHelper.RoundRect(new RectangleF(thumbX + 2, 2, hw - 4, Height - 5), (Height - 5) / 2))
-            using (var b = new SolidBrush(thumbCol))
+            using (var b = new LinearGradientBrush(new RectangleF(thumbX + 2, 2, hw - 4, Height - 5), ControlPaint.Light(thumbCol), thumbCol, LinearGradientMode.Vertical))
                 g.FillPath(b, path);
 
             // labels
@@ -198,9 +226,9 @@ namespace Shutter
             Color lc = _restart ? Color.White : Theme.TextSec;
             Color rc = _restart ? Theme.TextSec : Color.White;
             using (var b = new SolidBrush(lc))
-                g.DrawString("Restart", Font, b, new RectangleF(0, 0, hw, Height), sf);
+                g.DrawString("Restart", Theme.FontMdBold, b, new RectangleF(0, 0, hw, Height), sf);
             using (var b = new SolidBrush(rc))
-                g.DrawString("Shutdown", Font, b, new RectangleF(hw, 0, hw, Height), sf);
+                g.DrawString("Shutdown", Theme.FontMdBold, b, new RectangleF(hw, 0, hw, Height), sf);
         }
     }
 
@@ -231,22 +259,25 @@ namespace Shutter
             var rect = new Rectangle(pad, pad, Width - pad * 2, Height - pad * 2);
 
             // track ring
-            using (var p = new Pen(Color.FromArgb(40, _color.R, _color.G, _color.B), thick))
+            using (var p = new Pen(Color.FromArgb(52, _color.R, _color.G, _color.B), thick))
                 g.DrawArc(p, rect, -90, 360);
 
             // progress arc
             if (_fraction > 0)
             {
                 float sweep = (float)(_fraction * 360.0);
+                using (var glow = new Pen(Color.FromArgb(60, _color.R, _color.G, _color.B), thick + 7) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                    g.DrawArc(glow, rect, -90, sweep);
                 using (var p = new Pen(_color, thick) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                     g.DrawArc(p, rect, -90, sweep);
             }
 
             // centre text
             var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            using (var b = new SolidBrush(Theme.TextMuted))
+                g.DrawString("COUNTDOWN", Theme.FontXs, b, new RectangleF(0, 28, Width, 20), sf);
             using (var b = new SolidBrush(Theme.TextPri))
-                g.DrawString(_label, new Font("Segoe UI", 11f, FontStyle.Bold), b,
-                    new RectangleF(0, 0, Width, Height), sf);
+                g.DrawString(_label, Theme.FontLg, b, new RectangleF(0, 0, Width, Height), sf);
         }
     }
 
@@ -271,15 +302,19 @@ namespace Shutter
 
             using (var path = GfxHelper.RoundRect(new RectangleF(0, 0, Width - 1, Height - 1), 10))
             {
-                using (var b = new SolidBrush(Theme.Card)) g.FillPath(b, path);
+                using (var b = new LinearGradientBrush(new Rectangle(0, 0, Width, Height), Theme.Card, Theme.CardAlt, LinearGradientMode.Vertical))
+                    g.FillPath(b, path);
                 using (var p = new Pen(Theme.Border)) g.DrawPath(p, path);
+                using (var p = new Pen(Color.FromArgb(30, Color.White)))
+                using (var inner = GfxHelper.RoundRect(new RectangleF(1, 1, Width - 3, Height - 3), 9))
+                    g.DrawPath(p, inner);
             }
 
             if (!string.IsNullOrEmpty(_heading))
             {
                 var sf = new StringFormat { LineAlignment = StringAlignment.Center };
                 using (var b = new SolidBrush(Theme.TextSec))
-                    g.DrawString(_heading.ToUpperInvariant(), Theme.FontSm, b, new RectangleF(14, 6, Width - 28, 22), sf);
+                    g.DrawString(_heading.ToUpperInvariant(), Theme.FontXs, b, new RectangleF(14, 8, Width - 28, 20), sf);
             }
         }
 
@@ -289,7 +324,7 @@ namespace Shutter
     // â”€â”€ Main form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     internal class MainForm : Form
     {
-        private const string VersionStr  = "v1.2";
+        private const string VersionStr  = "v1.0.7";
         private const string AppName     = "Shutter";
         private const string SingleMutex = "Local\\WAMSoftware.Shutter.SingleInstance";
         private const string ShowMsg     = "WAMSoftware.Shutter.ShowExisting";
@@ -308,6 +343,11 @@ namespace Shutter
         private FlatBtn    _btnSchedule;
         private FlatBtn    _btnCancel;
         private Label      _lblStatus;
+        private Label      _lblHeroTitle;
+        private Label      _lblHeroSub;
+        private Label      _lblPreviewAction;
+        private Label      _lblPreviewWhen;
+        private Label      _lblPreviewLead;
         private NotifyIcon _tray;
         private ContextMenuStrip _trayMenu;
 
@@ -315,9 +355,9 @@ namespace Shutter
         {
             SuspendLayout();
             Text            = AppName + " " + VersionStr;
-            Size            = new Size(520, 580);
-            MinimumSize     = new Size(520, 580);
-            MaximumSize     = new Size(520, 580);
+            Size            = new Size(840, 640);
+            MinimumSize     = new Size(840, 640);
+            MaximumSize     = new Size(840, 640);
             StartPosition   = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.None;
             BackColor       = Theme.Bg;
@@ -339,7 +379,7 @@ namespace Shutter
             // â”€â”€ Title bar â”€â”€
             var title = new Panel {
                 Dock      = DockStyle.Top,
-                Height    = 44,
+                Height    = 52,
                 BackColor = Theme.Surface
             };
             title.MouseDown += (s, e) => {
@@ -355,16 +395,16 @@ namespace Shutter
                 ForeColor = Theme.TextPri,
                 BackColor = Color.Transparent,
                 AutoSize  = false,
-                Bounds    = new Rectangle(16, 0, 260, 44),
+                Bounds    = new Rectangle(18, 0, 320, 52),
                 TextAlign = ContentAlignment.MiddleLeft
             };
             title.Controls.Add(lblTitle);
 
-            var btnClose = MakeTitleBtn("âœ•", 476, Theme.Danger);
+            var btnClose = MakeTitleBtn("×", 794, Theme.Danger);
             btnClose.Click += (s, e) => { _tray.Visible = true; Hide(); };
             title.Controls.Add(btnClose);
 
-            var btnMin = MakeTitleBtn("â”€", 448, Theme.TextMuted);
+            var btnMin = MakeTitleBtn("—", 758, Theme.AccentSoft);
             btnMin.Click += (s, e) => WindowState = FormWindowState.Minimized;
             title.Controls.Add(btnMin);
 
@@ -372,14 +412,65 @@ namespace Shutter
 
             // â”€â”€ Body â”€â”€
             var body = new Panel {
-                Location  = new Point(0, 44),
-                Size      = new Size(520, 536),
-                BackColor = Theme.Bg
+                Location  = new Point(0, 52),
+                Size      = new Size(840, 588),
+                BackColor = Color.Transparent
             };
             Controls.Add(body);
 
+            var hero = new CardPanel { Heading = "Release Build", Bounds = new Rectangle(18, 16, 804, 134) };
+            body.Controls.Add(hero);
+
+            _lblHeroTitle = new Label {
+                Text = "Schedule with confidence.",
+                Font = Theme.FontHero,
+                ForeColor = Theme.TextPri,
+                BackColor = Color.Transparent,
+                Bounds = new Rectangle(22, 28, 460, 42)
+            };
+            hero.Controls.Add(_lblHeroTitle);
+
+            _lblHeroSub = new Label {
+                Text = "A sharper Shutter dashboard with live preview and exact v1.0.7 release identity.",
+                Font = Theme.FontSm,
+                ForeColor = Theme.TextSec,
+                BackColor = Color.Transparent,
+                Bounds = new Rectangle(24, 74, 430, 32)
+            };
+            hero.Controls.Add(_lblHeroSub);
+
+            _lblPreviewLead = new Label {
+                Text = "NEXT ACTION",
+                Font = Theme.FontXs,
+                ForeColor = Theme.Highlight,
+                BackColor = Color.Transparent,
+                Bounds = new Rectangle(524, 30, 220, 20),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            hero.Controls.Add(_lblPreviewLead);
+
+            _lblPreviewAction = new Label {
+                Text = "Restart",
+                Font = Theme.FontXl,
+                ForeColor = Theme.Success,
+                BackColor = Color.Transparent,
+                Bounds = new Rectangle(522, 48, 240, 40),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            hero.Controls.Add(_lblPreviewAction);
+
+            _lblPreviewWhen = new Label {
+                Text = DateTime.Now.ToString("dddd, MMM d  •  HH:mm"),
+                Font = Theme.FontSm,
+                ForeColor = Theme.TextSec,
+                BackColor = Color.Transparent,
+                Bounds = new Rectangle(524, 90, 240, 24),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            hero.Controls.Add(_lblPreviewWhen);
+
             // Left col: calendar + ring
-            var calCard = new CardPanel { Heading = "Select Date", Bounds = new Rectangle(14, 10, 246, 246) };
+            var calCard = new CardPanel { Heading = "Select Date", Bounds = new Rectangle(18, 166, 360, 248) };
             _cal = new MonthCalendar {
                 MaxSelectionCount = 1,
                 MinDate           = DateTime.Today,
@@ -388,32 +479,43 @@ namespace Shutter
                 TitleBackColor    = Theme.Surface,
                 TitleForeColor    = Theme.TextPri,
                 TrailingForeColor = Theme.TextMuted,
-                Location          = new Point(6, 28),
+                Location          = new Point(40, 36),
                 Font              = Theme.FontSm
             };
+            _cal.DateSelected += (s, e) => RefreshPreview();
             calCard.Controls.Add(_cal);
             body.Controls.Add(calCard);
 
-            var ringCard = new CardPanel { Heading = "Time Remaining", Bounds = new Rectangle(14, 268, 246, 180) };
+            var ringCard = new CardPanel { Heading = "Time Remaining", Bounds = new Rectangle(18, 430, 360, 140) };
             _ring = new Ring {
-                Location = new Point((246 - 150) / 2 - 6, 28),
-                Size     = new Size(150, 140)
+                Location = new Point(18, 6),
+                Size     = new Size(150, 124)
             };
             ringCard.Controls.Add(_ring);
+
+            var ringNote = new Label {
+                Text = "When scheduled, the ring fills toward the exact shutdown or restart moment.",
+                Font = Theme.FontSm,
+                ForeColor = Theme.TextSec,
+                BackColor = Color.Transparent,
+                Bounds = new Rectangle(164, 38, 170, 56)
+            };
+            ringCard.Controls.Add(ringNote);
             body.Controls.Add(ringCard);
 
             // Right col
-            int rx = 272, ry = 10;
+            int rx = 396, ry = 166;
 
             // Action toggle
-            var actCard = new CardPanel { Heading = "Action", Bounds = new Rectangle(rx, ry, 234, 80) };
-            _toggle = new Toggle { Location = new Point((234 - 240) / 2 + 117 - 120, 30), IsRestart = true };
+            var actCard = new CardPanel { Heading = "Action", Bounds = new Rectangle(rx, ry, 426, 92) };
+            _toggle = new Toggle { Location = new Point(92, 34), Size = new Size(240, 40), IsRestart = true };
+            _toggle.Click += (s, e) => RefreshPreview();
             actCard.Controls.Add(_toggle);
             body.Controls.Add(actCard);
-            ry += 90;
+            ry += 108;
 
             // Time picker
-            var timeCard = new CardPanel { Heading = "Time", Bounds = new Rectangle(rx, ry, 234, 70) };
+            var timeCard = new CardPanel { Heading = "Time", Bounds = new Rectangle(rx, ry, 426, 88) };
             _timePicker = new DateTimePicker {
                 Format         = DateTimePickerFormat.Custom,
                 CustomFormat   = "HH:mm",
@@ -421,33 +523,54 @@ namespace Shutter
                 BackColor      = Theme.Card,
                 ForeColor      = Theme.TextPri,
                 Font           = Theme.FontLg,
-                Location       = new Point(8, 28),
-                Size           = new Size(218, 32)
+                Location       = new Point(18, 34),
+                Size           = new Size(150, 32)
             };
+            _timePicker.ValueChanged += (s, e) => RefreshPreview();
             timeCard.Controls.Add(_timePicker);
-            body.Controls.Add(timeCard);
-            ry += 80;
 
-            // Status
-            var statusCard = new CardPanel { Heading = "Status", Bounds = new Rectangle(rx, ry, 234, 70) };
-            _lblStatus = new Label {
-                Text      = "Not scheduled",
+            var timeHint = new Label {
+                Text = "24-hour schedule time. Pick any future moment.",
+                Font = Theme.FontSm,
                 ForeColor = Theme.TextSec,
                 BackColor = Color.Transparent,
-                Font      = Theme.FontSm,
+                Bounds = new Rectangle(192, 38, 210, 22)
+            };
+            timeCard.Controls.Add(timeHint);
+            body.Controls.Add(timeCard);
+            ry += 104;
+
+            // Status
+            var statusCard = new CardPanel { Heading = "Status", Bounds = new Rectangle(rx, ry, 426, 108) };
+            _lblStatus = new Label {
+                Text      = "Not scheduled yet",
+                ForeColor = Theme.TextPri,
+                BackColor = Color.Transparent,
+                Font      = Theme.FontLg,
                 AutoSize  = false,
-                Bounds    = new Rectangle(8, 28, 218, 32),
+                Bounds    = new Rectangle(18, 32, 390, 28),
                 TextAlign = ContentAlignment.MiddleLeft
             };
             statusCard.Controls.Add(_lblStatus);
+
+            var statusHint = new Label {
+                Text = "Schedule an action to arm the live countdown and tray workflow.",
+                ForeColor = Theme.TextSec,
+                BackColor = Color.Transparent,
+                Font = Theme.FontSm,
+                AutoSize = false,
+                Bounds = new Rectangle(18, 62, 390, 26),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            statusCard.Controls.Add(statusHint);
             body.Controls.Add(statusCard);
-            ry += 80;
+            ry += 126;
 
             // Buttons
             _btnSchedule = new FlatBtn {
                 Text     = "Schedule",
                 BtnStyle = FlatBtn.Style.Primary,
-                Bounds   = new Rectangle(rx, ry, 112, 38),
+                Bounds   = new Rectangle(rx, ry, 204, 42),
                 Font     = Theme.FontMd
             };
             _btnSchedule.Click += OnSchedule;
@@ -456,41 +579,57 @@ namespace Shutter
             _btnCancel = new FlatBtn {
                 Text     = "Cancel",
                 BtnStyle = FlatBtn.Style.Danger,
-                Bounds   = new Rectangle(rx + 120, ry, 112, 38),
+                Bounds   = new Rectangle(rx + 222, ry, 204, 42),
                 Font     = Theme.FontMd,
                 Enabled  = false
             };
             _btnCancel.Click += OnCancel;
             body.Controls.Add(_btnCancel);
-            ry += 48;
+            ry += 58;
 
             // About / version row
             var lblVer = new Label {
-                Text      = "WAM-Software  " + VersionStr,
+                Text      = "WAM-Software  •  Release " + VersionStr,
                 ForeColor = Theme.TextMuted,
                 BackColor = Color.Transparent,
                 Font      = Theme.FontSm,
                 AutoSize  = false,
-                Bounds    = new Rectangle(rx, ry + 4, 234, 20),
+                Bounds    = new Rectangle(rx, ry + 4, 426, 20),
                 TextAlign = ContentAlignment.MiddleCenter
             };
             body.Controls.Add(lblVer);
+
+            RefreshPreview();
         }
 
         private Label MakeTitleBtn(string text, int x, Color hoverColor)
         {
             var b = new Label {
                 Text      = text,
-                Font      = new Font("Segoe UI", 10f),
+                Font      = new Font("Segoe UI", 11f),
                 ForeColor = Theme.TextMuted,
                 BackColor = Color.Transparent,
-                Bounds    = new Rectangle(x, 0, 32, 44),
+                Bounds    = new Rectangle(x, 0, 36, 52),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Cursor    = Cursors.Hand
             };
             b.MouseEnter += (s, e) => { b.ForeColor = hoverColor; };
             b.MouseLeave += (s, e) => { b.ForeColor = Theme.TextMuted; };
             return b;
+        }
+
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            using (var brush = new LinearGradientBrush(ClientRectangle, Theme.Bg, Color.FromArgb(9, 18, 30), LinearGradientMode.Vertical))
+                g.FillRectangle(brush, ClientRectangle);
+
+            using (var accent = new SolidBrush(Color.FromArgb(40, Theme.Accent)))
+                g.FillEllipse(accent, new Rectangle(-80, 20, 320, 220));
+            using (var glow = new SolidBrush(Color.FromArgb(28, Theme.Highlight)))
+                g.FillEllipse(glow, new Rectangle(560, 70, 240, 180));
+            using (var shade = new SolidBrush(Color.FromArgb(22, Theme.AccentSoft)))
+                g.FillEllipse(shade, new Rectangle(620, 350, 220, 160));
         }
 
         private void BuildTray()
@@ -548,8 +687,9 @@ namespace Shutter
             _ring.RingColor = _toggle.IsRestart ? Theme.Success : Theme.Danger;
             UpdateRing();
             _countdown.Start();
-            _lblStatus.Text      = (_toggle.IsRestart ? "Restart" : "Shutdown") + " at " + _targetDt.ToString("MMM d, HH:mm");
+            _lblStatus.Text      = (_toggle.IsRestart ? "Restart armed" : "Shutdown armed") + " for " + _targetDt.ToString("MMM d, HH:mm");
             _lblStatus.ForeColor = _toggle.IsRestart ? Theme.Success : Theme.Danger;
+            RefreshPreview();
         }
 
         private void OnCancel(object s, EventArgs e)
@@ -563,6 +703,7 @@ namespace Shutter
             _ring.RingColor      = Theme.Accent;
             _lblStatus.Text      = "Cancelled";
             _lblStatus.ForeColor = Theme.TextSec;
+            RefreshPreview();
         }
 
         private void OnTick(object s, EventArgs e)
@@ -591,6 +732,32 @@ namespace Shutter
             _ring.Label    = remaining.Hours.ToString("D2") + ":" +
                              remaining.Minutes.ToString("D2") + ":" +
                              remaining.Seconds.ToString("D2");
+            _lblPreviewWhen.Text = _targetDt.ToString("dddd, MMM d  •  HH:mm");
+        }
+
+        private void RefreshPreview()
+        {
+            var preview = _cal.SelectionStart.Date + _timePicker.Value.TimeOfDay;
+            bool isRestart = _toggle != null && _toggle.IsRestart;
+
+            if (_lblPreviewAction != null) {
+                _lblPreviewAction.Text = isRestart ? "Restart" : "Shutdown";
+                _lblPreviewAction.ForeColor = isRestart ? Theme.Success : Theme.Danger;
+            }
+
+            if (_lblPreviewWhen != null)
+                _lblPreviewWhen.Text = preview.ToString("dddd, MMM d  •  HH:mm");
+
+            if (_lblHeroSub == null)
+                return;
+
+            if (_scheduled) {
+                _lblHeroSub.Text = "Countdown is active. The tray icon will keep the schedule available while the window is hidden.";
+            } else if (preview <= DateTime.Now) {
+                _lblHeroSub.Text = "Choose a future date and time to arm the schedule.";
+            } else {
+                _lblHeroSub.Text = "Ready to " + (isRestart ? "restart" : "shut down") + " at " + preview.ToString("HH:mm on d MMMM") + ".";
+            }
         }
 
         private void Execute()
