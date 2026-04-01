@@ -164,8 +164,8 @@ namespace Shutter
 
             var actionGroup = new GroupBox { Text = "Actie", Dock = DockStyle.Fill, Padding = new Padding(10) };
             var actionFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
-            _rbShutdown = new RadioButton { Text = "Shutdown (/s)", AutoSize = true, Checked = true, Margin = new Padding(4, 8, 18, 4) };
-            _rbRestart = new RadioButton { Text = "Restart (/r)", AutoSize = true, Margin = new Padding(4, 8, 4, 4) };
+            _rbShutdown = new RadioButton { Text = "Shutdown (/s)", AutoSize = true, Checked = false, Margin = new Padding(4, 8, 18, 4) };
+            _rbRestart = new RadioButton { Text = "Restart (/r)", AutoSize = true, Checked = true, Margin = new Padding(4, 8, 4, 4) };
             _rbShutdown.CheckedChanged += (s, e) => UpdateComputed();
             _rbRestart.CheckedChanged += (s, e) => UpdateComputed();
             actionFlow.Controls.Add(_rbShutdown);
@@ -693,7 +693,18 @@ namespace Shutter
         {
             try
             {
-                var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                // Try loading from app.ico file first (more reliable)
+                var exePath = Application.ExecutablePath;
+                var exeDir = System.IO.Path.GetDirectoryName(exePath);
+                var iconPath = System.IO.Path.Combine(exeDir, "app.ico");
+                
+                if (File.Exists(iconPath))
+                {
+                    return new Icon(iconPath);
+                }
+                
+                // Fallback to extracting from executable
+                var icon = Icon.ExtractAssociatedIcon(exePath);
                 return icon;
             }
             catch
