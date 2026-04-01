@@ -11,7 +11,7 @@ permissions:
 jobs:
   release:
     if: "!contains(github.event.head_commit.message, '[skip release]')"
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,6 +61,12 @@ jobs:
           
           echo "file=$file" >> "$GITHUB_OUTPUT"
 
+      - name: Build with PowerShell
+        if: steps.tag_check.outputs.exists == 'false'
+        shell: powershell
+        run: |
+          .\build.ps1
+
       - name: Create and push tag
         if: steps.tag_check.outputs.exists == 'false'
         run: |
@@ -69,9 +75,10 @@ jobs:
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release with Exe
         if: steps.tag_check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           body_path: ${{ steps.notes.outputs.file }}
+          files: dist/Shutter.exe
