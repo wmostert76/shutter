@@ -1,3 +1,7 @@
+## v1.3.0 - 2026-04-08
+- Force (`/f`) staat nu altijd aan bij shutdown en restart
+- Nieuwe standaard planning: vandaag om 22:00
+
 ## v1.0.14-test - 2026-04-01
 
 Testing with the restart default change

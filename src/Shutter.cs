@@ -16,9 +16,9 @@ using System.Windows.Forms;
 [assembly: AssemblyProduct("Shutter")]
 [assembly: AssemblyCompany("WAM-Software")]
 [assembly: AssemblyCopyright("Made by WAM-Software (c) since 1997.")]
-[assembly: AssemblyVersion("1.0.7.0")]
-[assembly: AssemblyFileVersion("1.0.7.0")]
-[assembly: AssemblyInformationalVersion("1.0.7")]
+[assembly: AssemblyVersion("1.3.0.0")]
+[assembly: AssemblyFileVersion("1.3.0.0")]
+[assembly: AssemblyInformationalVersion("1.3.0")]
 
 namespace Shutter
 {
@@ -324,7 +324,7 @@ namespace Shutter
     // â”€â”€ Main form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     internal class MainForm : Form
     {
-        private const string VersionStr  = "v1.0.7";
+        private const string VersionStr  = "v1.3.0";
         private const string AppName     = "Shutter";
         private const string SingleMutex = "Local\\WAMSoftware.Shutter.SingleInstance";
         private const string ShowMsg     = "WAMSoftware.Shutter.ShowExisting";
@@ -526,6 +526,7 @@ namespace Shutter
                 Location       = new Point(18, 34),
                 Size           = new Size(150, 32)
             };
+            _timePicker.Value = DateTime.Today.AddHours(22);
             _timePicker.ValueChanged += (s, e) => RefreshPreview();
             timeCard.Controls.Add(_timePicker);
 
@@ -599,6 +600,7 @@ namespace Shutter
             };
             body.Controls.Add(lblVer);
 
+            _cal.SetDate(DateTime.Today);
             RefreshPreview();
         }
 
@@ -762,7 +764,7 @@ namespace Shutter
 
         private void Execute()
         {
-            string args = _toggle.IsRestart ? "/r /t 10" : "/s /t 10";
+            string args = _toggle.IsRestart ? "/r /f /t 10" : "/s /f /t 10";
             try {
                 Process.Start("shutdown.exe", args);
             } catch (Exception ex) {

@@ -12,11 +12,11 @@
 
 ## Features
 - Kies **Shutdown** of **Restart**
-- Kies datum via **kalender** + tijd (HH:mm:ss)
+- Kies datum via **kalender** + tijd (HH:mm)
 - Toont **seconden tot actie** + **aftel mechanisme** (live countdown)
 - Optioneel doelserver: leeg = lokaal, of computernaam/IP voor remote (`/m \\\\SERVER`)
 - **Stop/Annuleer** via `shutdown /a`
-- Optioneel **force** (`/f`)
+- **Force** staat standaard aan (`/f`)
 - **Systeemvak icoon (tray)** met menu: Open/Verberg, Start, Stop, Afsluiten + eigen icoon
 - **Over... / About box** met versie + info
 
@@ -24,8 +24,9 @@
 1) Start `dist/Shutter.exe`
 2) Vul optioneel een servernaam/IP in (leeg = lokaal)
 3) Kies datum in de kalender + tijd
-4) Klik **Start** en bevestig
-5) Stop/annuleer indien nodig met **Stop** (of via het tray menu)
+4) Standaard staat de planning op **vandaag 22:00**
+5) Klik **Start** en bevestig
+6) Stop/annuleer indien nodig met **Stop** (of via het tray menu)
 
 > Remote shutdown/restart vereist rechten op de doelserver en dat remote shutdown toegestaan is in de Windows configuratie.
 
