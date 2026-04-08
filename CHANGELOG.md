@@ -1,3 +1,7 @@
+## v1.3.1 - 2026-04-08
+- Tray icon laadt nu uit de embedded icoonresource in de exe
+- Build embedt `app.ico` direct in `Shutter.exe`, zodat losse release-downloads ook een tray-icoon houden
+
 ## v1.3.0 - 2026-04-08
 - Force (`/f`) staat nu altijd aan bij shutdown en restart
 - Nieuwe standaard planning: vandaag om 22:00

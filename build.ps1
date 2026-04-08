@@ -12,6 +12,6 @@ if (-not (Test-Path $icon)) {
 
 if (-not (Test-Path "dist")) { New-Item -ItemType Directory -Path "dist" | Out-Null }
 
-& $csc /nologo /target:winexe /optimize+ /win32icon:$icon /out:dist\\Shutter.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll src\\Shutter.cs
+& $csc /nologo /target:winexe /optimize+ /win32icon:$icon "/resource:$icon,Shutter.AppIcon" /out:dist\\Shutter.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll src\\Shutter.cs
 if ($LASTEXITCODE -ne 0) { throw "Build failed (csc exit code $LASTEXITCODE)." }
 Write-Host "Built dist\\Shutter.exe"
