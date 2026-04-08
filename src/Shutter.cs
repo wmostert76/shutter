@@ -328,36 +328,49 @@ namespace Shutter
         private const string AppName     = "Shutter";
         private const string SingleMutex = "Local\\WAMSoftware.Shutter.SingleInstance";
         private const string ShowMsg     = "WAMSoftware.Shutter.ShowExisting";
+        private const int MaxShutdownSeconds = 315360000;
 
         private static readonly int ShowMsgId = NativeMethods.RegisterWindowMessage(ShowMsg);
 
         private System.Windows.Forms.Timer _countdown;
         private DateTime  _targetDt  = DateTime.MinValue;
+        private DateTime  _scheduledAt = DateTime.MinValue;
         private bool      _scheduled = false;
+        private bool      _allowExit = false;
+        private string    _countdownServer = "";
+        private string    _countdownCommand = "";
 
         // controls
         private MonthCalendar _cal;
         private DateTimePicker _timePicker;
+        private TextBox    _serverBox;
         private Toggle     _toggle;
         private Ring       _ring;
         private FlatBtn    _btnSchedule;
         private FlatBtn    _btnCancel;
+        private FlatBtn    _btnAbout;
         private Label      _lblStatus;
+        private Label      _lblStatusHint;
         private Label      _lblHeroTitle;
         private Label      _lblHeroSub;
         private Label      _lblPreviewAction;
         private Label      _lblPreviewWhen;
         private Label      _lblPreviewLead;
+        private Label      _lblCommand;
         private NotifyIcon _tray;
         private ContextMenuStrip _trayMenu;
+        private ToolStripMenuItem _trayToggleItem;
+        private ToolStripMenuItem _trayStartItem;
+        private ToolStripMenuItem _trayStopItem;
+        private ToolStripMenuItem _trayAboutItem;
 
         public MainForm()
         {
             SuspendLayout();
             Text            = AppName + " " + VersionStr;
-            Size            = new Size(840, 640);
-            MinimumSize     = new Size(840, 640);
-            MaximumSize     = new Size(840, 640);
+            Size            = new Size(840, 740);
+            MinimumSize     = new Size(840, 740);
+            MaximumSize     = new Size(840, 740);
             StartPosition   = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.None;
             BackColor       = Theme.Bg;
@@ -413,7 +426,7 @@ namespace Shutter
             // â”€â”€ Body â”€â”€
             var body = new Panel {
                 Location  = new Point(0, 52),
-                Size      = new Size(840, 588),
+                Size      = new Size(840, 688),
                 BackColor = Color.Transparent
             };
             Controls.Add(body);
@@ -431,11 +444,11 @@ namespace Shutter
             hero.Controls.Add(_lblHeroTitle);
 
             _lblHeroSub = new Label {
-                Text = "A sharper Shutter dashboard with live preview and exact v1.0.7 release identity.",
+                Text = "Remote scheduling, tray actions and exact shutdown commands are back in this build.",
                 Font = Theme.FontSm,
                 ForeColor = Theme.TextSec,
                 BackColor = Color.Transparent,
-                Bounds = new Rectangle(24, 74, 430, 32)
+                Bounds = new Rectangle(24, 74, 450, 32)
             };
             hero.Controls.Add(_lblHeroSub);
 
@@ -460,7 +473,7 @@ namespace Shutter
             hero.Controls.Add(_lblPreviewAction);
 
             _lblPreviewWhen = new Label {
-                Text = DateTime.Now.ToString("dddd, MMM d  •  HH:mm"),
+                Text = DateTime.Now.ToString("dddd, MMM d  •  HH:mm:ss"),
                 Font = Theme.FontSm,
                 ForeColor = Theme.TextSec,
                 BackColor = Color.Transparent,
@@ -514,11 +527,34 @@ namespace Shutter
             body.Controls.Add(actCard);
             ry += 108;
 
+            var serverCard = new CardPanel { Heading = "Server", Bounds = new Rectangle(rx, ry, 426, 88) };
+            _serverBox = new TextBox {
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Theme.Surface,
+                ForeColor = Theme.TextPri,
+                Font = Theme.FontMd,
+                Location = new Point(18, 34),
+                Size = new Size(388, 24)
+            };
+            _serverBox.TextChanged += (s, e) => RefreshPreview();
+            serverCard.Controls.Add(_serverBox);
+
+            var serverHint = new Label {
+                Text = "Leeg = lokaal, of vul computernaam/IP in voor /m \\\\SERVER.",
+                Font = Theme.FontXs,
+                ForeColor = Theme.TextSec,
+                BackColor = Color.Transparent,
+                Bounds = new Rectangle(18, 60, 388, 16)
+            };
+            serverCard.Controls.Add(serverHint);
+            body.Controls.Add(serverCard);
+            ry += 104;
+
             // Time picker
             var timeCard = new CardPanel { Heading = "Time", Bounds = new Rectangle(rx, ry, 426, 88) };
             _timePicker = new DateTimePicker {
                 Format         = DateTimePickerFormat.Custom,
-                CustomFormat   = "HH:mm",
+                CustomFormat   = "HH:mm:ss",
                 ShowUpDown     = true,
                 BackColor      = Theme.Card,
                 ForeColor      = Theme.TextPri,
@@ -531,18 +567,18 @@ namespace Shutter
             timeCard.Controls.Add(_timePicker);
 
             var timeHint = new Label {
-                Text = "24-hour schedule time. Pick any future moment.",
+                Text = "Default staat op vandaag 22:00. Force (/f) staat altijd aan.",
                 Font = Theme.FontSm,
                 ForeColor = Theme.TextSec,
                 BackColor = Color.Transparent,
-                Bounds = new Rectangle(192, 38, 210, 22)
+                Bounds = new Rectangle(192, 38, 214, 22)
             };
             timeCard.Controls.Add(timeHint);
             body.Controls.Add(timeCard);
             ry += 104;
 
             // Status
-            var statusCard = new CardPanel { Heading = "Status", Bounds = new Rectangle(rx, ry, 426, 108) };
+            var statusCard = new CardPanel { Heading = "Status", Bounds = new Rectangle(rx, ry, 426, 152) };
             _lblStatus = new Label {
                 Text      = "Not scheduled yet",
                 ForeColor = Theme.TextPri,
@@ -554,38 +590,55 @@ namespace Shutter
             };
             statusCard.Controls.Add(_lblStatus);
 
-            var statusHint = new Label {
-                Text = "Schedule an action to arm the live countdown and tray workflow.",
+            _lblStatusHint = new Label {
+                Text = "Use Schedule to arm shutdown.exe now, or Stop to send shutdown /a.",
                 ForeColor = Theme.TextSec,
                 BackColor = Color.Transparent,
                 Font = Theme.FontSm,
                 AutoSize = false,
-                Bounds = new Rectangle(18, 62, 390, 26),
+                Bounds = new Rectangle(18, 62, 390, 20),
                 TextAlign = ContentAlignment.MiddleLeft
             };
-            statusCard.Controls.Add(statusHint);
+            statusCard.Controls.Add(_lblStatusHint);
+
+            _lblCommand = new Label {
+                ForeColor = Theme.TextPri,
+                BackColor = Color.Transparent,
+                Font = new Font("Consolas", 9f),
+                AutoSize = false,
+                Bounds = new Rectangle(18, 88, 390, 42)
+            };
+            statusCard.Controls.Add(_lblCommand);
             body.Controls.Add(statusCard);
-            ry += 126;
+            ry += 170;
 
             // Buttons
             _btnSchedule = new FlatBtn {
                 Text     = "Schedule",
                 BtnStyle = FlatBtn.Style.Primary,
-                Bounds   = new Rectangle(rx, ry, 204, 42),
+                Bounds   = new Rectangle(rx, ry, 134, 42),
                 Font     = Theme.FontMd
             };
             _btnSchedule.Click += OnSchedule;
             body.Controls.Add(_btnSchedule);
 
             _btnCancel = new FlatBtn {
-                Text     = "Cancel",
+                Text     = "Stop",
                 BtnStyle = FlatBtn.Style.Danger,
-                Bounds   = new Rectangle(rx + 222, ry, 204, 42),
-                Font     = Theme.FontMd,
-                Enabled  = false
+                Bounds   = new Rectangle(rx + 146, ry, 134, 42),
+                Font     = Theme.FontMd
             };
             _btnCancel.Click += OnCancel;
             body.Controls.Add(_btnCancel);
+
+            _btnAbout = new FlatBtn {
+                Text     = "About",
+                BtnStyle = FlatBtn.Style.Ghost,
+                Bounds   = new Rectangle(rx + 292, ry, 134, 42),
+                Font     = Theme.FontMd
+            };
+            _btnAbout.Click += (s, e) => ShowAbout();
+            body.Controls.Add(_btnAbout);
             ry += 58;
 
             // About / version row
@@ -637,18 +690,37 @@ namespace Shutter
         private void BuildTray()
         {
             _trayMenu = new ContextMenuStrip();
-            _trayMenu.Items.Add("Show", null, (s, e) => ShowForm());
-            _trayMenu.Items.Add("Exit", null, (s, e) => Application.Exit());
+            _trayToggleItem = new ToolStripMenuItem("Hide");
+            _trayStartItem = new ToolStripMenuItem("Schedule");
+            _trayStopItem = new ToolStripMenuItem("Stop");
+            _trayAboutItem = new ToolStripMenuItem("About");
+            var exitItem = new ToolStripMenuItem("Exit");
+
+            _trayToggleItem.Click += (s, e) => ToggleWindowVisibility();
+            _trayStartItem.Click += OnSchedule;
+            _trayStopItem.Click += OnCancel;
+            _trayAboutItem.Click += (s, e) => ShowAbout();
+            exitItem.Click += (s, e) => { _allowExit = true; Close(); };
+
+            _trayMenu.Items.Add(_trayToggleItem);
+            _trayMenu.Items.Add(new ToolStripSeparator());
+            _trayMenu.Items.Add(_trayStartItem);
+            _trayMenu.Items.Add(_trayStopItem);
+            _trayMenu.Items.Add(new ToolStripSeparator());
+            _trayMenu.Items.Add(_trayAboutItem);
+            _trayMenu.Items.Add(new ToolStripSeparator());
+            _trayMenu.Items.Add(exitItem);
 
             _tray = new NotifyIcon {
                 Text    = AppName,
-                Visible = false,
+                Visible = true,
                 ContextMenuStrip = _trayMenu
             };
-            _tray.DoubleClick += (s, e) => ShowForm();
+            _tray.DoubleClick += (s, e) => ToggleWindowVisibility();
 
             Icon ico = LoadAppIcon();
             if (ico != null) { _tray.Icon = ico; Icon = ico; }
+            UpdateTray();
         }
 
         private Icon LoadAppIcon()
@@ -669,47 +741,171 @@ namespace Shutter
 
         private void ShowForm()
         {
+            ShowInTaskbar = true;
             Show();
             WindowState = FormWindowState.Normal;
             Activate();
-            _tray.Visible = false;
+            UpdateTray();
+        }
+
+        private void HideToTray(bool showBalloon)
+        {
+            Hide();
+            ShowInTaskbar = false;
+            UpdateTray();
+            if (showBalloon && _tray != null) {
+                try { _tray.ShowBalloonTip(2500, AppName, "Shutter draait in het systeemvak.", ToolTipIcon.Info); } catch { }
+            }
+        }
+
+        private void ToggleWindowVisibility()
+        {
+            if (Visible && WindowState != FormWindowState.Minimized) HideToTray(false);
+            else ShowForm();
+        }
+
+        private DateTime GetTargetDateTime()
+        {
+            return _cal.SelectionStart.Date + _timePicker.Value.TimeOfDay;
+        }
+
+        private int GetTargetSeconds(DateTime target)
+        {
+            return (int)Math.Ceiling((target - DateTime.Now).TotalSeconds);
+        }
+
+        private static string NormalizeServer(string serverInput)
+        {
+            string s = (serverInput ?? "").Trim();
+            if (s.Length == 0) return "";
+            return s.StartsWith(@"\\") ? s : @"\\" + s;
+        }
+
+        private string BuildShutdownArguments(int seconds)
+        {
+            var sb = new StringBuilder();
+            string server = NormalizeServer(_serverBox.Text);
+            if (!string.IsNullOrWhiteSpace(server)) {
+                sb.Append("/m ");
+                sb.Append(server);
+                sb.Append(' ');
+            }
+            sb.Append(_toggle.IsRestart ? "/r " : "/s ");
+            sb.Append("/t ");
+            sb.Append(seconds < 0 ? 0 : seconds);
+            sb.Append(" /f");
+            return sb.ToString().Trim();
+        }
+
+        private ShutdownResult RunShutdown(string arguments)
+        {
+            var psi = new ProcessStartInfo {
+                FileName = "shutdown.exe",
+                Arguments = arguments,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true
+            };
+
+            using (var p = new Process { StartInfo = psi }) {
+                if (!p.Start()) throw new InvalidOperationException("Kon shutdown.exe niet starten.");
+                string stdout = p.StandardOutput.ReadToEnd();
+                string stderr = p.StandardError.ReadToEnd();
+                if (!p.WaitForExit(5000)) {
+                    try { p.Kill(); } catch { }
+                    throw new TimeoutException("shutdown.exe reageerde niet binnen 5 seconden.");
+                }
+                return new ShutdownResult(p.ExitCode, (stdout + "\n" + stderr).Trim());
+            }
         }
 
         private void OnSchedule(object s, EventArgs e)
         {
-            var d = _cal.SelectionStart.Date;
-            var t = _timePicker.Value.TimeOfDay;
-            _targetDt = d + t;
+            if (_scheduled) {
+                MessageBox.Show("Er loopt al een countdown. Klik op Stop om te annuleren.", AppName,
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
-            if (_targetDt <= DateTime.Now) {
-                MessageBox.Show("Please select a future date and time.", AppName,
+            DateTime target = GetTargetDateTime();
+            int seconds = GetTargetSeconds(target);
+            if (seconds < 0) {
+                MessageBox.Show("Kies een datum/tijd in de toekomst.", AppName,
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            _scheduled = true;
-            _btnSchedule.Enabled = false;
-            _btnCancel.Enabled   = true;
-            _ring.RingColor = _toggle.IsRestart ? Theme.Success : Theme.Danger;
-            UpdateRing();
-            _countdown.Start();
-            _lblStatus.Text      = (_toggle.IsRestart ? "Restart armed" : "Shutdown armed") + " for " + _targetDt.ToString("MMM d, HH:mm");
-            _lblStatus.ForeColor = _toggle.IsRestart ? Theme.Success : Theme.Danger;
-            RefreshPreview();
+            if (seconds > MaxShutdownSeconds) {
+                MessageBox.Show("De gekozen tijd is te ver weg. Max /t is " + MaxShutdownSeconds + " seconden.", AppName,
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string action = _toggle.IsRestart ? "RESTART" : "SHUTDOWN";
+            string serverDisplay = string.IsNullOrWhiteSpace(_serverBox.Text) ? "lokaal" : _serverBox.Text.Trim();
+            string args = BuildShutdownArguments(seconds);
+            string cmd = "shutdown.exe " + args;
+
+            var confirm = MessageBox.Show(
+                "Bevestigen?\n\nActie: " + action + "\nServer: " + serverDisplay + "\nTijd: " +
+                target.ToString("yyyy-MM-dd HH:mm:ss") + "\nSeconden: " + seconds + "\n\nCommando:\n" + cmd,
+                AppName, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (confirm != DialogResult.Yes) return;
+
+            try {
+                ShutdownResult result = RunShutdown(args);
+                if (result.ExitCode != 0) {
+                    MessageBox.Show("shutdown.exe faalde (exit " + result.ExitCode + ").\n\n" + result.Output, AppName,
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                _scheduled = true;
+                _scheduledAt = DateTime.Now;
+                _targetDt = DateTime.Now.AddSeconds(seconds);
+                _countdownServer = NormalizeServer(_serverBox.Text);
+                _countdownCommand = cmd;
+                _countdown.Start();
+                _ring.RingColor = _toggle.IsRestart ? Theme.Success : Theme.Danger;
+                _lblStatus.ForeColor = _toggle.IsRestart ? Theme.Success : Theme.Danger;
+                UpdateRing();
+                RefreshPreview();
+                try { _tray.ShowBalloonTip(3000, AppName, "Shutdown/restart gepland. Countdown gestart.", ToolTipIcon.Info); } catch { }
+            } catch (Exception ex) {
+                MessageBox.Show(ex.Message, AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void OnCancel(object s, EventArgs e)
         {
-            _countdown.Stop();
-            _scheduled = false;
-            _btnSchedule.Enabled = true;
-            _btnCancel.Enabled   = false;
-            _ring.Fraction       = 0;
-            _ring.Label          = "--:--:--";
-            _ring.RingColor      = Theme.Accent;
-            _lblStatus.Text      = "Cancelled";
-            _lblStatus.ForeColor = Theme.TextSec;
-            RefreshPreview();
+            string server = _scheduled ? _countdownServer : NormalizeServer(_serverBox.Text);
+            string args = string.IsNullOrWhiteSpace(server) ? "/a" : "/a /m " + server;
+
+            try {
+                ShutdownResult result = RunShutdown(args);
+                if (result.ExitCode != 0) {
+                    MessageBox.Show("Annuleren faalde (exit " + result.ExitCode + ").\n\n" + result.Output, AppName,
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                _countdown.Stop();
+                _scheduled = false;
+                _scheduledAt = DateTime.MinValue;
+                _targetDt = DateTime.MinValue;
+                _countdownServer = "";
+                _countdownCommand = "";
+                _ring.Fraction = 0;
+                _ring.Label = "--:--:--";
+                _ring.RingColor = Theme.Accent;
+                _lblStatus.Text = "Shutdown/restart cancelled";
+                _lblStatus.ForeColor = Theme.TextSec;
+                RefreshPreview();
+                try { _tray.ShowBalloonTip(2500, AppName, "Shutdown/restart geannuleerd.", ToolTipIcon.Info); } catch { }
+            } catch (Exception ex) {
+                MessageBox.Show(ex.Message, AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void OnTick(object s, EventArgs e)
@@ -718,16 +914,25 @@ namespace Shutter
             UpdateRing();
             if (DateTime.Now >= _targetDt) {
                 _countdown.Stop();
-                Execute();
+                _scheduled = false;
+                _lblStatus.Text = (_toggle.IsRestart ? "Restart" : "Shutdown") + " should execute now";
+                _lblStatus.ForeColor = _toggle.IsRestart ? Theme.Success : Theme.Danger;
+                UpdateTray();
             }
         }
 
         private void UpdateRing()
         {
+            if (_targetDt == DateTime.MinValue) {
+                _ring.Fraction = 0;
+                _ring.Label = "--:--:--";
+                return;
+            }
+
             TimeSpan remaining = _targetDt - DateTime.Now;
             if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
 
-            TimeSpan total = _targetDt - _cal.SelectionStart.Date.Date;
+            TimeSpan total = _targetDt - _scheduledAt;
             if (total <= TimeSpan.Zero) total = TimeSpan.FromSeconds(1);
 
             double fraction = 1.0 - (remaining.TotalSeconds / total.TotalSeconds);
@@ -735,16 +940,17 @@ namespace Shutter
             if (fraction > 1) fraction = 1;
 
             _ring.Fraction = fraction;
-            _ring.Label    = remaining.Hours.ToString("D2") + ":" +
-                             remaining.Minutes.ToString("D2") + ":" +
-                             remaining.Seconds.ToString("D2");
-            _lblPreviewWhen.Text = _targetDt.ToString("dddd, MMM d  •  HH:mm");
+            _ring.Label = remaining.TotalDays >= 1
+                ? ((int)remaining.TotalDays).ToString("D2") + ":" + remaining.Hours.ToString("D2") + ":" + remaining.Minutes.ToString("D2")
+                : remaining.Hours.ToString("D2") + ":" + remaining.Minutes.ToString("D2") + ":" + remaining.Seconds.ToString("D2");
         }
 
         private void RefreshPreview()
         {
-            var preview = _cal.SelectionStart.Date + _timePicker.Value.TimeOfDay;
+            var preview = _scheduled ? _targetDt : GetTargetDateTime();
+            int seconds = GetTargetSeconds(GetTargetDateTime());
             bool isRestart = _toggle != null && _toggle.IsRestart;
+            bool canSchedule = !_scheduled && seconds >= 0 && seconds <= MaxShutdownSeconds;
 
             if (_lblPreviewAction != null) {
                 _lblPreviewAction.Text = isRestart ? "Restart" : "Shutdown";
@@ -752,48 +958,186 @@ namespace Shutter
             }
 
             if (_lblPreviewWhen != null)
-                _lblPreviewWhen.Text = preview.ToString("dddd, MMM d  •  HH:mm");
+                _lblPreviewWhen.Text = preview.ToString("dddd, MMM d  •  HH:mm:ss");
 
-            if (_lblHeroSub == null)
-                return;
+            if (_lblCommand != null) {
+                string command = _scheduled && !string.IsNullOrWhiteSpace(_countdownCommand)
+                    ? _countdownCommand
+                    : "shutdown.exe " + BuildShutdownArguments(seconds);
+                _lblCommand.Text = command;
+            }
 
             if (_scheduled) {
-                _lblHeroSub.Text = "Countdown is active. The tray icon will keep the schedule available while the window is hidden.";
-            } else if (preview <= DateTime.Now) {
+                _lblHeroSub.Text = "Countdown is active. Stop sends shutdown /a and the tray keeps Start/Stop/About available.";
+                _lblStatus.Text = (isRestart ? "Restart armed" : "Shutdown armed") + " for " + _targetDt.ToString("yyyy-MM-dd HH:mm:ss");
+            } else if (seconds < 0) {
                 _lblHeroSub.Text = "Choose a future date and time to arm the schedule.";
+                _lblStatus.Text = "Selected time is in the past";
+                _lblStatus.ForeColor = Theme.Warning;
+            } else if (seconds > MaxShutdownSeconds) {
+                _lblHeroSub.Text = "The target is too far away for shutdown.exe /t.";
+                _lblStatus.Text = "Selected time exceeds the maximum /t range";
+                _lblStatus.ForeColor = Theme.Warning;
             } else {
-                _lblHeroSub.Text = "Ready to " + (isRestart ? "restart" : "shut down") + " at " + preview.ToString("HH:mm on d MMMM") + ".";
+                string serverLabel = string.IsNullOrWhiteSpace(_serverBox.Text) ? "local machine" : NormalizeServer(_serverBox.Text);
+                _lblHeroSub.Text = "Ready to " + (isRestart ? "restart" : "shut down") + " " + serverLabel + " at " + preview.ToString("HH:mm:ss on d MMMM") + ".";
+                _lblStatus.Text = "Ready to schedule";
+                _lblStatus.ForeColor = Theme.TextPri;
             }
+
+            _cal.Enabled = !_scheduled;
+            _timePicker.Enabled = !_scheduled;
+            _serverBox.Enabled = !_scheduled;
+            _toggle.Enabled = !_scheduled;
+            _btnSchedule.Enabled = canSchedule;
+            _btnCancel.Enabled = true;
+            UpdateTray();
         }
 
-        private void Execute()
+        private void UpdateTray()
         {
-            string args = _toggle.IsRestart ? "/r /f /t 10" : "/s /f /t 10";
-            try {
-                Process.Start("shutdown.exe", args);
-            } catch (Exception ex) {
-                MessageBox.Show("Could not execute: " + ex.Message, AppName,
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (_tray == null) return;
+
+            string tt = AppName;
+            if (_scheduled) {
+                int remaining = GetTargetSeconds(_targetDt);
+                if (remaining < 0) remaining = 0;
+                tt = AppName + " - " + remaining + "s";
             }
-            Application.Exit();
+            if (tt.Length > 63) tt = tt.Substring(0, 63);
+            try { _tray.Text = tt; } catch { }
+
+            if (_trayToggleItem != null) _trayToggleItem.Text = Visible && WindowState != FormWindowState.Minimized ? "Hide" : "Show";
+            if (_trayStartItem != null) _trayStartItem.Enabled = _btnSchedule == null || _btnSchedule.Enabled;
+            if (_trayStopItem != null) _trayStopItem.Enabled = true;
+        }
+
+        private void ShowAbout()
+        {
+            using (var about = new AboutForm(LoadAppIcon())) {
+                if (Visible && WindowState != FormWindowState.Minimized) about.ShowDialog(this);
+                else about.ShowDialog();
+            }
         }
 
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == ShowMsgId) ShowForm();
+            if (m.Msg == ShowMsgId) {
+                ShowForm();
+                return;
+            }
             base.WndProc(ref m);
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            if (e.CloseReason == CloseReason.UserClosing) {
+            if (e.CloseReason == CloseReason.UserClosing && !_allowExit) {
                 e.Cancel = true;
-                _tray.Visible = true;
-                Hide();
-            } else {
-                _tray.Dispose();
-                base.OnFormClosing(e);
+                HideToTray(true);
+                return;
             }
+
+            if (_tray != null) {
+                _tray.Visible = false;
+                _tray.Dispose();
+            }
+            base.OnFormClosing(e);
+        }
+    }
+
+    internal sealed class ShutdownResult
+    {
+        public int ExitCode { get; private set; }
+        public string Output { get; private set; }
+
+        public ShutdownResult(int exitCode, string output)
+        {
+            ExitCode = exitCode;
+            Output = output ?? "";
+        }
+    }
+
+    internal sealed class AboutForm : Form
+    {
+        private readonly Icon _icon;
+
+        public AboutForm(Icon appIcon)
+        {
+            _icon = appIcon != null ? (Icon)appIcon.Clone() : (Icon)SystemIcons.Application.Clone();
+            Icon = _icon;
+
+            Text = "About Shutter";
+            Font = Theme.FontMd;
+            StartPosition = FormStartPosition.CenterParent;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            ShowInTaskbar = false;
+            ClientSize = new Size(540, 320);
+
+            var root = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                RowCount = 3,
+                ColumnCount = 1,
+                Padding = new Padding(16)
+            };
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 86));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+            Controls.Add(root);
+
+            var header = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(20, 32, 52) };
+            root.Controls.Add(header, 0, 0);
+            header.Controls.Add(new Label {
+                Text = "Shutter",
+                Font = Theme.FontHero,
+                ForeColor = Theme.TextPri,
+                BackColor = Color.Transparent,
+                Bounds = new Rectangle(16, 10, 260, 36)
+            });
+            header.Controls.Add(new Label {
+                Text = "Made by WAM-Software (c) since 1997.",
+                Font = Theme.FontSm,
+                ForeColor = Theme.TextSec,
+                BackColor = Color.Transparent,
+                Bounds = new Rectangle(18, 48, 320, 20)
+            });
+
+            var body = new Label {
+                Dock = DockStyle.Fill,
+                Font = Theme.FontMd,
+                ForeColor = Color.Black,
+                BackColor = Color.White,
+                Padding = new Padding(16),
+                Text =
+                    "Current dark UI with merged classic functionality.\n\n" +
+                    "- Exact shutdown.exe scheduling with /t seconds\n" +
+                    "- Remote target via /m \\\\SERVER\n" +
+                    "- Force always on via /f\n" +
+                    "- Tray menu with Schedule, Stop and About\n" +
+                    "- Embedded tray icon in the standalone exe\n\n" +
+                    "GitHub: https://github.com/wmostert76/shutter"
+            };
+            root.Controls.Add(body, 0, 1);
+
+            var footer = new FlowLayoutPanel {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.RightToLeft,
+                WrapContents = false
+            };
+            var closeButton = new Button { Text = "Close", Width = 100, Height = 28, Margin = new Padding(8, 8, 0, 0) };
+            closeButton.Click += (s, e) => Close();
+            var githubButton = new Button { Text = "Open GitHub", Width = 100, Height = 28, Margin = new Padding(8, 8, 0, 0) };
+            githubButton.Click += (s, e) => Process.Start(new ProcessStartInfo("https://github.com/wmostert76/shutter") { UseShellExecute = true });
+            footer.Controls.Add(closeButton);
+            footer.Controls.Add(githubButton);
+            root.Controls.Add(footer, 0, 2);
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            if (_icon != null) _icon.Dispose();
+            base.OnFormClosed(e);
         }
     }
 
