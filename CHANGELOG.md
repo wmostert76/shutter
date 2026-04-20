@@ -6,6 +6,53 @@
 - Force (`/f`) staat nu altijd aan bij shutdown en restart
 - Nieuwe standaard planning: vandaag om 22:00
 
+## v1.4.9 - 2026-04-20
+
+- About-tekst bijgewerkt voor lokaal-only werking en actuele UI.
+
+## v1.4.8 - 2026-04-20
+
+- GUI: tekst "COUNTDOWN" uit de ring verwijderd.
+
+## v1.4.7 - 2026-04-20
+
+- GUI: countdown-ring echt rond gemaakt en beter gecentreerd.
+
+## v1.4.6 - 2026-04-20
+
+- GUI: kalender volledig herontworpen met custom moderne kalendercontrol.
+
+## v1.4.5 - 2026-04-20
+
+- GUI: onderruimte nog iets verder verkleind.
+
+## v1.4.4 - 2026-04-20
+
+- Credittekst aangepast en gecentreerd.
+- GUI: onderruimte verder verkleind.
+
+## v1.4.3 - 2026-04-20
+
+- GUI: onderruimte verder compacter gemaakt.
+
+## v1.4.2 - 2026-04-20
+
+- GUI: onderruimte compacter gemaakt.
+
+## v1.4.1 - 2026-04-20
+
+- Credit aangepast naar "Made is Idea, vibecoded by Codex."
+
+## v1.4.0 - 2026-04-20
+
+- Release bump voor lokale-only UI en startup shutdown-detectie.
+
+## v1.3.2 - 2026-04-20
+
+- GUI: serverveld verwijderd; Shutter plant lokaal shutdown/restart.
+- GUI: kalender- en countdown-kaarten opgepoetst.
+- Startup: controle op bestaande geplande shutdown/restart en vraag om te annuleren.
+
 ## v1.0.14-test - 2026-04-01
 
 Testing with the restart default change
